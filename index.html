@@ -1,0 +1,1056 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="day">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Marginalia — 页边批注 · 林深的个人写作</title>
+<meta name="description" content="Marginalia 是林深的个人写作日志：关于工艺、代码与好奇心的页边批注。" />
+
+<!-- 字体：Fraunces（展示衬线，光学尺寸）/ Newsreader（正文衬线）/ IBM Plex Mono（元信息） -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Newsreader:opsz,ital,wght@6..72,0,400;6..72,0,500;6..72,1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+/* ============================================================
+   Marginalia — 设计令牌
+   美学方向：温暖纸感的编辑式文学杂志
+   配色：oklch 温暖中性 + 烧赭石强调色，避开纯黑/纯白与 AI 配色
+   ============================================================ */
+:root {
+  /* 排版 */
+  --font-display: "Fraunces", "Songti SC", "Noto Serif SC", Georgia, serif;
+  --font-body: "Newsreader", "Songti SC", "Noto Serif SC", Georgia, serif;
+  --font-mono: "IBM Plex Mono", "SFMono-Regular", ui-monospace, monospace;
+
+  /* 流体排版尺度（完美四度 1.333，clamp 流体） */
+  --step--1: clamp(0.75rem, 0.72rem + 0.15vw, 0.84rem);
+  --step-0:  clamp(1.0625rem, 1.02rem + 0.22vw, 1.1875rem);
+  --step-1:  clamp(1.25rem, 1.16rem + 0.45vw, 1.5rem);
+  --step-2:  clamp(1.5rem, 1.33rem + 0.85vw, 2rem);
+  --step-3:  clamp(2rem, 1.68rem + 1.6vw, 3rem);
+  --step-4:  clamp(2.75rem, 2.1rem + 3.25vw, 4.75rem);
+  --step-5:  clamp(3.5rem, 2.4rem + 5.5vw, 6.5rem);
+
+  /* 4pt 间距尺度 */
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2.5rem;
+  --space-xl: 4rem;
+  --space-2xl: 6.5rem;
+  --space-3xl: 10rem;
+
+  --measure: 68ch;            /* 正文理想行长 */
+  --measure-wide: 88ch;
+  --gutter: clamp(1.25rem, 1rem + 1.5vw, 2.5rem);
+
+  /* 行高：标题紧、正文松 */
+  --leading-tight: 1.08;
+  --leading-snug: 1.25;
+  --leading-body: 1.62;
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 日间：温暖纸感 */
+[data-theme="day"] {
+  --paper:        oklch(96.5% 0.012 85);
+  --paper-soft:   oklch(94% 0.016 84);
+  --paper-deep:   oklch(91% 0.02 82);
+  --ink:          oklch(22% 0.018 55);
+  --ink-soft:     oklch(38% 0.02 55);
+  --ink-mute:     oklch(52% 0.018 55);
+  --ink-faint:    oklch(64% 0.014 60);
+  --accent:       oklch(52% 0.135 46);   /* 烧赭石 */
+  --accent-deep:  oklch(42% 0.14 44);
+  --accent-soft:  oklch(72% 0.07 60);
+  --rule:         oklch(82% 0.012 75);
+  --rule-soft:    oklch(88% 0.008 80);
+  --highlight:    oklch(88% 0.06 85);    /* 标记笔色 */
+}
+
+/* 夜间：墨色纸，更松的行距补偿轻字重感知 */
+[data-theme="night"] {
+  --paper:        oklch(17% 0.008 55);
+  --paper-soft:   oklch(20% 0.01 55);
+  --paper-deep:   oklch(24% 0.012 55);
+  --ink:          oklch(93% 0.012 85);
+  --ink-soft:     oklch(78% 0.014 80);
+  --ink-mute:     oklch(64% 0.012 70);
+  --ink-faint:    oklch(52% 0.01 65);
+  --accent:       oklch(70% 0.13 50);
+  --accent-deep:  oklch(62% 0.14 48);
+  --accent-soft:  oklch(45% 0.08 50);
+  --rule:         oklch(32% 0.012 60);
+  --rule-soft:    oklch(26% 0.008 58);
+  --highlight:    oklch(38% 0.07 70);
+  --leading-body: 1.7;
+}
+
+/* ============================================================
+   基础重置
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  line-height: var(--leading-body);
+  font-weight: 400;
+  background: var(--paper);
+  color: var(--ink);
+  font-kerning: normal;
+  font-variant-numeric: oldstyle-nums proportional-nums;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.6s var(--ease-out-quart), color 0.6s var(--ease-out-quart);
+  overflow-x: hidden;
+}
+
+/* 纸感纹理：极淡的噪点叠层，仅在纸面上增强材质感 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.4;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.04 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode: multiply;
+}
+[data-theme="night"] body::before { mix-blend-mode: screen; opacity: 0.25; }
+
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+
+::selection { background: var(--accent); color: var(--paper); }
+
+/* 阅读进度条 */
+.progress {
+  position: fixed; top: 0; left: 0; height: 2px; width: 0%;
+  background: var(--accent); z-index: 100;
+  transition: width 0.1s linear;
+}
+
+/* ============================================================
+   页面容器
+   ============================================================ */
+.page {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+  position: relative;
+  z-index: 2;
+}
+
+/* ============================================================
+   Masthead 报头
+   ============================================================ */
+.masthead {
+  padding-top: var(--space-lg);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--ink);
+  position: relative;
+}
+
+.masthead__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(2.5rem, 2rem + 2.5vw, 3.75rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variation-settings: "opsz" 144, "SOFT" 30;
+  font-style: italic;
+  color: var(--ink);
+}
+.wordmark::first-letter { color: var(--accent); }
+
+.masthead__meta {
+  display: flex;
+  gap: var(--space-md);
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.02em;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+}
+.masthead__meta span:nth-child(2) { color: var(--accent-deep); }
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  padding: var(--space-2xs) 0;
+  transition: color 0.3s var(--ease-out-quart);
+}
+.theme-toggle:hover { color: var(--accent); }
+.theme-toggle .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 var(--accent);
+  transition: box-shadow 0.4s var(--ease-out-quart);
+}
+.theme-toggle:hover .dot { box-shadow: 0 0 0 4px oklch(from var(--accent) l c h / 0.18); }
+
+/* 主导航：横排，下划线动效 */
+.nav {
+  display: flex;
+  gap: var(--space-lg);
+  margin-top: var(--space-md);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.nav a {
+  position: relative;
+  padding: var(--space-3xs) 0;
+  color: var(--ink-soft);
+  transition: color 0.3s var(--ease-out-quart);
+}
+.nav a::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: -2px;
+  height: 1px; background: var(--accent);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform 0.4s var(--ease-out-expo);
+}
+.nav a:hover, .nav a[aria-current="page"] { color: var(--ink); }
+.nav a:hover::after, .nav a[aria-current="page"]::after { transform: scaleX(1); }
+
+/* 报头副铭：编辑式 tagline */
+.masthead__tagline {
+  margin-top: var(--space-md);
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: var(--step-0);
+  color: var(--ink-soft);
+  max-width: 52ch;
+}
+.masthead__tagline em { font-style: normal; color: var(--accent-deep); }
+
+/* ============================================================
+   Lead 头条文章
+   ============================================================ */
+.lead {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
+  padding: var(--space-2xl) 0 var(--space-xl);
+  border-bottom: 1px solid var(--rule);
+}
+
+.lead__kicker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+}
+.lead__kicker .num {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: var(--step-1);
+  color: var(--accent);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.lead__kicker .sep { flex: 1; height: 1px; background: var(--rule); }
+
+.lead__title {
+  font-family: var(--font-display);
+  font-weight: 340;
+  font-size: var(--step-5);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.025em;
+  font-variation-settings: "opsz" 144, "SOFT" 50;
+  max-width: 18ch;
+  color: var(--ink);
+  margin-top: var(--space-xs);
+}
+.lead__title em {
+  font-style: italic;
+  font-weight: 300;
+  color: var(--accent-deep);
+  font-variation-settings: "opsz" 144, "SOFT" 80;
+}
+
+.lead__deck {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: var(--step-1);
+  line-height: var(--leading-snug);
+  color: var(--ink-soft);
+  max-width: var(--measure-wide);
+  margin-top: var(--space-md);
+}
+
+.lead__byline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  flex-wrap: wrap;
+}
+.lead__byline .author { color: var(--ink); }
+.lead__byline .dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--accent); display: inline-block;
+}
+
+.lead__body {
+  margin-top: var(--space-lg);
+  max-width: var(--measure);
+}
+.lead__body p {
+  font-size: var(--step-0);
+  line-height: var(--leading-body);
+  margin-bottom: var(--space-md);
+  color: var(--ink);
+}
+/* 首字下沉 */
+.lead__body > p:first-of-type::first-letter {
+  font-family: var(--font-display);
+  font-weight: 360;
+  font-size: 4.2em;
+  line-height: 0.82;
+  float: left;
+  margin: 0.08em 0.12em 0 -0.04em;
+  color: var(--accent-deep);
+  font-variation-settings: "opsz" 144, "SOFT" 60;
+}
+.lead__body p mark {
+  background: linear-gradient(transparent 55%, var(--highlight) 55%);
+  padding: 0 0.1em;
+  color: inherit;
+}
+.lead__body p em { font-style: italic; color: var(--accent-deep); }
+
+.lead__continue {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2xs);
+  margin-top: var(--space-sm);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  padding-bottom: 4px;
+  border-bottom: 1px solid currentColor;
+  transition: gap 0.4s var(--ease-out-expo), color 0.3s var(--ease-out-quart);
+}
+.lead__continue:hover { gap: var(--space-sm); color: var(--accent); }
+.lead__continue .arrow { transition: transform 0.4s var(--ease-out-expo); }
+.lead__continue:hover .arrow { transform: translateX(2px); }
+
+/* ============================================================
+   主网格：文章索引 + 边栏
+   ============================================================ */
+.main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-xl);
+  padding: var(--space-xl) 0;
+}
+@container page (min-width: 960px) {
+  .main-grid { grid-template-columns: minmax(0, 1fr) 320px; }
+}
+.main-grid { container-type: inline-size; container-name: page; }
+
+/* 区段标题：编辑式 */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--ink);
+}
+.section-head h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-style: italic;
+  font-size: var(--step-2);
+  line-height: 1;
+  color: var(--ink);
+  font-variation-settings: "opsz" 72, "SOFT" 50;
+}
+.section-head .count {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin-left: auto;
+}
+
+/* ============================================================
+   文章索引：编号式列表
+   ============================================================ */
+.essays { display: grid; gap: 0; }
+
+.essay {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-md);
+  align-items: baseline;
+  padding: var(--space-lg) 0;
+  border-top: 1px solid var(--rule);
+  position: relative;
+  transition: padding-left 0.5s var(--ease-out-expo);
+}
+.essay:first-child { border-top: 0; }
+.essay:hover { padding-left: var(--space-sm); }
+.essay::before {
+  content: "";
+  position: absolute; left: 0; top: 50%;
+  width: 0; height: 60%;
+  background: var(--accent);
+  transform: translateY(-50%);
+  transition: width 0.5s var(--ease-out-expo);
+}
+.essay:hover::before { width: 3px; }
+
+.essay__num {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: var(--step-2);
+  line-height: 1;
+  color: var(--accent);
+  font-variation-settings: "opsz" 72;
+  min-width: 2.5ch;
+}
+
+.essay__main { min-width: 0; }
+.essay__title {
+  font-family: var(--font-display);
+  font-weight: 380;
+  font-size: var(--step-2);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  font-variation-settings: "opsz" 72, "SOFT" 30;
+  transition: color 0.3s var(--ease-out-quart);
+}
+.essay:hover .essay__title { color: var(--accent-deep); }
+.essay__title em { font-style: italic; color: var(--accent-deep); }
+
+.essay__deck {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: var(--step-0);
+  line-height: var(--leading-snug);
+  color: var(--ink-soft);
+  margin-top: var(--space-2xs);
+  max-width: 60ch;
+}
+
+.essay__meta {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  text-align: right;
+  white-space: nowrap;
+  align-self: baseline;
+}
+.essay__meta .read {
+  display: block;
+  color: var(--ink-faint);
+  margin-top: var(--space-3xs);
+}
+
+/* 容器查询：窄列时堆叠 */
+@container page (max-width: 960px) {
+  .essay { grid-template-columns: auto minmax(0, 1fr); }
+  .essay__meta { grid-column: 2; text-align: left; margin-top: var(--space-2xs); }
+}
+
+/* ============================================================
+   边栏 Marginalia
+   ============================================================ */
+.sidebar { display: grid; gap: var(--space-xl); align-content: start; }
+
+.side-block {
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--rule);
+}
+.side-block:last-child { border-bottom: 0; }
+
+.side-block__label {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  margin-bottom: var(--space-sm);
+}
+
+/* 正在阅读 */
+.reading .title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 380;
+  font-size: var(--step-1);
+  line-height: var(--leading-snug);
+  color: var(--ink);
+  font-variation-settings: "opsz" 72;
+}
+.reading .author {
+  font-family: var(--font-body);
+  font-size: var(--step--1);
+  color: var(--ink-mute);
+  margin-top: var(--space-3xs);
+}
+.reading .note {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: var(--step-0);
+  line-height: var(--leading-snug);
+  color: var(--ink-soft);
+  margin-top: var(--space-sm);
+  padding-left: var(--space-sm);
+  border-left: 2px solid var(--accent-soft);
+}
+
+/* 主题标签：编辑式索引 */
+.topics { display: flex; flex-direction: column; gap: var(--space-xs); }
+.topic {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-sm);
+  align-items: baseline;
+  padding: var(--space-2xs) 0;
+  border-bottom: 1px dotted var(--rule);
+  transition: color 0.3s var(--ease-out-quart);
+}
+.topic:last-child { border-bottom: 0; }
+.topic:hover { color: var(--accent-deep); }
+.topic .name {
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  color: var(--ink);
+}
+.topic:hover .name { color: var(--accent-deep); }
+.topic .tally {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--ink-mute);
+  font-variant-numeric: tabular-nums;
+}
+.topic .leader {
+  border-bottom: 1px dotted var(--rule);
+  align-self: end;
+  height: 1px;
+  margin-bottom: 0.4em;
+}
+
+/* 通讯订阅 */
+.subscribe__pitch {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: var(--step-0);
+  line-height: var(--leading-snug);
+  color: var(--ink-soft);
+  margin-bottom: var(--space-md);
+}
+.subscribe__form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-2xs);
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: var(--space-2xs);
+}
+.subscribe__form input {
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  padding: var(--space-2xs) 0;
+  outline: none;
+}
+.subscribe__form input::placeholder { color: var(--ink-faint); font-style: italic; }
+.subscribe__form button {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  padding: var(--space-2xs) var(--space-xs);
+  transition: color 0.3s var(--ease-out-quart);
+}
+.subscribe__form button:hover { color: var(--accent); }
+.subscribe__note {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  margin-top: var(--space-xs);
+  letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   关于作者
+   ============================================================ */
+.about {
+  padding: var(--space-2xl) 0;
+  border-top: 1px solid var(--ink);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-xl);
+  align-items: start;
+}
+@container page (min-width: 960px) {
+  .about { grid-template-columns: 0.9fr 1.1fr; gap: var(--space-2xl); }
+}
+
+.about__portrait {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  background: var(--paper-deep);
+  overflow: hidden;
+  border: 1px solid var(--rule);
+}
+.about__portrait svg { width: 100%; height: 100%; }
+
+.about__text h2 {
+  font-family: var(--font-display);
+  font-weight: 340;
+  font-size: var(--step-3);
+  line-height: var(--leading-tight);
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  font-variation-settings: "opsz" 144, "SOFT" 50;
+}
+.about__text h2 em { font-style: italic; color: var(--accent-deep); }
+.about__text .role {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  margin-top: var(--space-xs);
+}
+.about__text p {
+  font-size: var(--step-0);
+  line-height: var(--leading-body);
+  margin-top: var(--space-md);
+  color: var(--ink);
+  max-width: var(--measure);
+}
+.about__text p + p { margin-top: var(--space-sm); }
+.about__links {
+  display: flex;
+  gap: var(--space-lg);
+  margin-top: var(--space-lg);
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.about__links a {
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 3px;
+  transition: color 0.3s var(--ease-out-quart), border-color 0.3s var(--ease-out-quart);
+}
+.about__links a:hover { color: var(--accent-deep); border-color: var(--accent); }
+
+/* ============================================================
+   Colophon 版权页（杂志式）
+   ============================================================ */
+.colophon {
+  border-top: 3px double var(--ink);
+  padding: var(--space-xl) 0 var(--space-2xl);
+  margin-top: var(--space-xl);
+}
+.colophon__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+}
+@container page (min-width: 720px) {
+  .colophon__grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.colophon__mark {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 300;
+  font-size: var(--step-3);
+  line-height: 1;
+  color: var(--ink);
+  font-variation-settings: "opsz" 144, "SOFT" 60;
+}
+.colophon__mark span { color: var(--accent); }
+
+.colophon__col h3 {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent-deep);
+  margin-bottom: var(--space-sm);
+}
+.colophon__col p, .colophon__col li {
+  font-family: var(--font-body);
+  font-size: var(--step--1);
+  line-height: var(--leading-snug);
+  color: var(--ink-soft);
+}
+.colophon__col ul { list-style: none; padding: 0; display: grid; gap: var(--space-3xs); }
+.colophon__col a:hover { color: var(--accent-deep); }
+
+.colophon__bottom {
+  margin-top: var(--space-xl);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   入场动效
+   ============================================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 0.9s var(--ease-out-expo), transform 0.9s var(--ease-out-expo);
+}
+.reveal.is-in { opacity: 1; transform: none; }
+.reveal[data-delay="1"] { transition-delay: 0.08s; }
+.reveal[data-delay="2"] { transition-delay: 0.16s; }
+.reveal[data-delay="3"] { transition-delay: 0.24s; }
+
+/* 移动端导航换行 */
+@media (max-width: 640px) {
+  .masthead__top { gap: var(--space-sm); }
+  .nav { gap: var(--space-md); flex-wrap: wrap; }
+  .lead { padding: var(--space-xl) 0; }
+}
+
+/* 跳转链接（无障碍） */
+.skip {
+  position: absolute; left: -9999px; top: 0;
+  background: var(--ink); color: var(--paper);
+  padding: var(--space-sm) var(--space-md);
+  font-family: var(--font-mono); font-size: var(--step--1);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  z-index: 200;
+}
+.skip:focus { left: var(--gutter); top: var(--gutter); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+</style>
+</head>
+
+<body>
+<a class="skip" href="#main">跳至正文</a>
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<div class="page">
+
+  <!-- ============================== Masthead ============================== -->
+  <header class="masthead">
+    <div class="masthead__top">
+      <a class="wordmark" href="#">Marginalia</a>
+
+      <div class="masthead__meta" aria-label="刊物信息">
+        <span>Vol. III · Issue 27</span>
+        <span>2026 · 夏</span>
+        <button class="theme-toggle" id="themeToggle" aria-label="切换日夜主题">
+          <span class="dot"></span>
+          <span class="label">夜读</span>
+        </button>
+      </div>
+    </div>
+
+    <nav class="nav" aria-label="主导航">
+      <a href="#lead" aria-current="page">头条</a>
+      <a href="#essays">文章</a>
+      <a href="#about">关于</a>
+      <a href="#archive">档案</a>
+      <a href="#subscribe">通讯</a>
+    </nav>
+
+    <p class="masthead__tagline">
+      <em>页边批注</em>——林深的个人写作日志。在代码与工艺的间隙处，为那些值得停下来重读的细节留一笔。
+    </p>
+  </header>
+
+  <!-- ============================== Lead 头条 ============================== -->
+  <main id="main">
+  <article class="lead" id="lead">
+    <!--LEAD:START-->
+    <!-- build.mjs 会把 posts/ 中 featured: true 的头条文章注入此处 -->
+    <!--LEAD:END-->
+  </article>
+
+  <!-- ============================== 主网格 ============================== -->
+  <div class="main-grid">
+
+    <!-- 文章索引 -->
+    <section id="essays" aria-labelledby="essays-head">
+      <div class="section-head">
+        <h2 id="essays-head">近期批注</h2>
+        <span class="count"><!--COUNT--> 篇 · 按时序</span>
+      </div>
+
+      <ol class="essays" role="list">
+        <!--POSTS:START-->
+        <!-- build.mjs 会把 posts/ 中所有非 featured 文章按日期倒序注入此处 -->
+        <!--POSTS:END-->
+      </ol>
+    </section>
+
+    <!-- 边栏 -->
+    <aside class="sidebar" aria-label="边栏">
+
+      <div class="side-block reading reveal">
+        <div class="side-block__label">正在阅读</div>
+        <p class="title">《如何观看一棵树》</p>
+        <p class="author">Tim Ingold · 译本</p>
+        <p class="note">「观察不是接收信息，而是与事物共处一段时间。」——这恰是写好代码也需要的姿态。</p>
+      </div>
+
+      <div class="side-block reveal" id="archive">
+        <div class="side-block__label">主题索引</div>
+        <nav class="topics" aria-label="主题分类">
+          <a class="topic" href="#"><span class="name">工艺 · Craft</span><span class="leader"></span><span class="tally">24</span></a>
+          <a class="topic" href="#"><span class="name">代码 · Code</span><span class="leader"></span><span class="tally">31</span></a>
+          <a class="topic" href="#"><span class="name">阅读 · Reading</span><span class="leader"></span><span class="tally">18</span></a>
+          <a class="topic" href="#"><span class="name">城市 · Place</span><span class="leader"></span><span class="tally">09</span></a>
+          <a class="topic" href="#"><span class="name">随想 · Notes</span><span class="leader"></span><span class="tally">15</span></a>
+        </nav>
+      </div>
+
+      <div class="side-block subscribe reveal" id="subscribe">
+        <div class="side-block__label">每月一封</div>
+        <p class="subscribe__pitch">把月度批注寄到你的信箱——一篇长文、三段摘抄、一个值得驻足的细节。无广告，可随时退订。</p>
+        <form class="subscribe__form" onsubmit="event.preventDefault(); this.querySelector('button').textContent='已寄出 ✓';">
+          <input type="email" placeholder="your@email.com" aria-label="邮箱地址" required />
+          <button type="submit">订阅</button>
+        </form>
+        <p class="subscribe__note">第 27 期将于 07.31 寄出 · 当前 2,184 位读者</p>
+      </div>
+
+    </aside>
+  </div>
+
+  <!-- ============================== 关于 ============================== -->
+  <section class="about" id="about">
+    <div class="about__portrait reveal">
+      <!-- 编辑式肖像：SVG 单色版画风 -->
+      <svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="作者肖像">
+        <defs>
+          <pattern id="hatch" patternUnits="userSpaceOnUse" width="3" height="3" patternTransform="rotate(45)">
+            <line x1="0" y1="0" x2="0" y2="3" stroke="currentColor" stroke-width="0.8" opacity="0.5"/>
+          </pattern>
+          <pattern id="hatch2" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(-35)">
+            <line x1="0" y1="0" x2="0" y2="4" stroke="currentColor" stroke-width="0.6" opacity="0.35"/>
+          </pattern>
+        </defs>
+        <rect width="400" height="500" fill="var(--paper-deep)"/>
+        <!-- 背景纸纹线 -->
+        <rect width="400" height="500" fill="url(#hatch2)" opacity="0.4"/>
+        <!-- 人物轮廓（简化版画风） -->
+        <g fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- 肩膀 -->
+          <path d="M 90 500 Q 100 380 150 350 L 250 350 Q 300 380 310 500" />
+          <!-- 颈 -->
+          <path d="M 170 350 L 175 300 Q 200 310 225 300 L 230 350" />
+          <!-- 头部轮廓 -->
+          <path d="M 150 200 Q 145 140 200 120 Q 255 140 250 200 Q 252 250 230 285 Q 200 305 170 285 Q 148 250 150 200 Z" />
+          <!-- 头发 -->
+          <path d="M 150 195 Q 148 150 175 130 Q 200 115 225 130 Q 252 150 250 195 Q 248 175 230 168 Q 215 160 200 162 Q 185 160 170 168 Q 152 175 150 195 Z" fill="var(--ink)" opacity="0.85"/>
+          <!-- 眉 -->
+          <path d="M 172 207 Q 182 202 192 207" />
+          <path d="M 208 207 Q 218 202 228 207" />
+          <!-- 眼镜 -->
+          <circle cx="182" cy="220" r="13" />
+          <circle cx="218" cy="220" r="13" />
+          <path d="M 195 220 L 205 220" />
+          <!-- 鼻 -->
+          <path d="M 200 225 Q 198 245 195 255 Q 200 258 205 255 Q 202 245 200 225" />
+          <!-- 嘴 -->
+          <path d="M 188 268 Q 200 272 212 268" />
+          <!-- 阴影 -->
+          <path d="M 230 200 Q 245 230 240 270 Q 235 290 220 300" fill="url(#hatch)" stroke="none" />
+          <path d="M 250 200 Q 258 180 250 160" />
+        </g>
+        <!-- 边角刊号 -->
+        <text x="30" y="40" font-family="var(--font-mono)" font-size="11" fill="var(--ink-mute)" letter-spacing="2">PORTRAIT · 2026</text>
+        <text x="370" y="480" text-anchor="end" font-family="var(--font-display)" font-style="italic" font-size="20" fill="var(--accent-deep)">— L.S.</text>
+      </svg>
+    </div>
+
+    <div class="about__text reveal" data-delay="1">
+      <h2>关于<em>林深</em></h2>
+      <p class="role">写作者 · 工程师 · 偶尔的排印爱好者</p>
+      <p>
+        我在一家做开发者工具的小公司写代码，业余写一些关于「为什么这样比那样好」的长文。我相信好界面和好代码共享同一种品质——它们都不急着解释自己。
+      </p>
+      <p>
+        Marginalia 始于 2023 年的一个雨夜，最初只是想给读过的书留点批注，后来慢慢长成了现在这样：一份关于工艺、代码与好奇心的不定期刊物。如果你也愿意在细节里多停一会儿，欢迎留下来。
+      </p>
+      <div class="about__links">
+        <a href="#">完整档案 →</a>
+        <a href="#">写信给我</a>
+        <a href="#">RSS 订阅</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== Colophon ============================== -->
+  <footer class="colophon">
+    <div class="colophon__grid">
+      <div class="colophon__col">
+        <div class="colophon__mark">Marginalia<span>.</span></div>
+        <p style="margin-top:var(--space-sm)">一份关于工艺、代码与好奇心的<br/>不定期个人刊物。</p>
+      </div>
+
+      <div class="colophon__col">
+        <h3>字体 · Typography</h3>
+        <ul>
+          <li>展示 — Fraunces (Variable)</li>
+          <li>正文 — Newsreader</li>
+          <li>元信息 — IBM Plex Mono</li>
+          <li>中文 — Songti SC / Noto Serif SC</li>
+        </ul>
+      </div>
+
+      <div class="colophon__col">
+        <h3>导览 · Navigate</h3>
+        <ul>
+          <li><a href="#lead">头条文章</a></li>
+          <li><a href="#essays">近期批注</a></li>
+          <li><a href="#archive">主题档案</a></li>
+          <li><a href="#subscribe">订阅通讯</a></li>
+          <li><a href="#">RSS · Atom</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="colophon__bottom">
+      <span>© 2023–2026 林深 · 保留所有批注</span>
+      <span>设于纸面 · 排于屏幕</span>
+      <span>Issue 27 · 印于 2026.07</span>
+    </div>
+  </footer>
+  </main>
+
+</div>
+
+<script>
+  /* ---------- 主题切换：日/夜 ---------- */
+  (function () {
+    const root = document.documentElement;
+    const toggle = document.getElementById("themeToggle");
+    const label = toggle.querySelector(".label");
+    const stored = localStorage.getItem("marginalia-theme");
+    if (stored) { root.dataset.theme = stored; }
+
+    function sync() {
+      const night = root.dataset.theme === "night";
+      label.textContent = night ? "日读" : "夜读";
+    }
+    sync();
+
+    toggle.addEventListener("click", () => {
+      root.dataset.theme = root.dataset.theme === "night" ? "day" : "night";
+      localStorage.setItem("marginalia-theme", root.dataset.theme);
+      sync();
+    });
+
+    /* 尊重系统偏好（首次访问） */
+    if (!stored && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      root.dataset.theme = "night";
+      sync();
+    }
+  })();
+
+  /* ---------- 阅读进度条 ---------- */
+  (function () {
+    const bar = document.getElementById("progress");
+    const tick = () => {
+      const h = document.documentElement;
+      const scrolled = h.scrollTop;
+      const total = h.scrollHeight - h.clientHeight;
+      const pct = total > 0 ? (scrolled / total) * 100 : 0;
+      bar.style.width = pct + "%";
+    };
+    window.addEventListener("scroll", tick, { passive: true });
+    window.addEventListener("resize", tick);
+    tick();
+  })();
+
+  /* ---------- 入场动效：IntersectionObserver ---------- */
+  (function () {
+    const els = document.querySelectorAll(".reveal");
+    if (!("IntersectionObserver" in window)) {
+      els.forEach(e => e.classList.add("is-in"));
+      return;
+    }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(en => {
+        if (en.isIntersecting) {
+          en.target.classList.add("is-in");
+          io.unobserve(en.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+    els.forEach(e => io.observe(e));
+  })();
+</script>
+</body>
+</html>
