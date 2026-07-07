@@ -125,7 +125,7 @@ const leadHtml = `    <div class="lead__kicker reveal">
     </p>
 
     <div class="lead__byline reveal" data-delay="3">
-      <span class="author">林深 · 撰稿</span>
+      <span class="author">青灯 · 撰稿</span>
       <span class="dot" aria-hidden="true"></span>
       <span>约 ${featured.read} 分钟阅读</span>
       <span class="dot" aria-hidden="true"></span>
@@ -142,7 +142,7 @@ const leadHtml = `    <div class="lead__kicker reveal">
 
 /* ---------- 4. 清理并重建 dist ---------- */
 
-await rm(DIST, { recursive: true, force: true });
+try { await rm(DIST, { recursive: true, force: true }); } catch (e) { console.log("（dist 被占用，跳过清理，直接覆盖）"); }
 await mkdir(join(DIST, "posts"), { recursive: true });
 
 /* ---------- 5. 注入 index.html ---------- */
