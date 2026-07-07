@@ -3,24 +3,24 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Marginalia — 页边批注 · 林深的个人写作</title>
-<meta name="description" content="Marginalia 是林深的个人写作日志：关于工艺、代码与好奇心的页边批注。" />
+<title>青灯黄卷 · 一份静谧的阅读札记</title>
+<meta name="description" content="青灯黄卷 — 一份静谧的阅读札记：青灯之下，黄卷之间，为值得重读的字句留一笔朱批。" />
 
 <!-- 字体：Fraunces（展示衬线，光学尺寸）/ Newsreader（正文衬线）/ IBM Plex Mono（元信息） -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Newsreader:opsz,ital,wght@6..72,0,400;6..72,0,500;6..72,1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Newsreader:opsz,ital,wght@6..72,0,400;6..72,0,500;6..72,1,400&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@300;400;500;600&display=swap" rel="stylesheet" />
 
 <style>
 /* ============================================================
-   Marginalia — 设计令牌
+   青灯黄卷 — 设计令牌
    美学方向：温暖纸感的编辑式文学杂志
    配色：oklch 温暖中性 + 烧赭石强调色，避开纯黑/纯白与 AI 配色
    ============================================================ */
 :root {
   /* 排版 */
-  --font-display: "Fraunces", "Songti SC", "Noto Serif SC", Georgia, serif;
-  --font-body: "Newsreader", "Songti SC", "Noto Serif SC", Georgia, serif;
+  --font-display: "Fraunces", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --font-body: "Newsreader", "Noto Serif SC", "Songti SC", Georgia, serif;
   --font-mono: "IBM Plex Mono", "SFMono-Regular", ui-monospace, monospace;
 
   /* 流体排版尺度（完美四度 1.333，clamp 流体） */
@@ -56,38 +56,40 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* 日间：温暖纸感 */
+/* 日间：泛黄纸 · 青灯青 · 朱砂印 */
 [data-theme="day"] {
-  --paper:        oklch(96.5% 0.012 85);
-  --paper-soft:   oklch(94% 0.016 84);
-  --paper-deep:   oklch(91% 0.02 82);
-  --ink:          oklch(22% 0.018 55);
-  --ink-soft:     oklch(38% 0.02 55);
-  --ink-mute:     oklch(52% 0.018 55);
-  --ink-faint:    oklch(64% 0.014 60);
-  --accent:       oklch(52% 0.135 46);   /* 烧赭石 */
-  --accent-deep:  oklch(42% 0.14 44);
-  --accent-soft:  oklch(72% 0.07 60);
-  --rule:         oklch(82% 0.012 75);
-  --rule-soft:    oklch(88% 0.008 80);
-  --highlight:    oklch(88% 0.06 85);    /* 标记笔色 */
+  --paper:        oklch(90% 0.04 85);    /* 泛黄纸 */
+  --paper-soft:   oklch(88% 0.045 85);
+  --paper-deep:   oklch(85% 0.05 84);
+  --ink:          oklch(25% 0.02 250);   /* 墨黑带青 */
+  --ink-soft:     oklch(40% 0.025 250);
+  --ink-mute:     oklch(55% 0.02 245);
+  --ink-faint:    oklch(68% 0.015 240);
+  --accent:       oklch(48% 0.09 200);   /* 青灯青 */
+  --accent-deep:  oklch(38% 0.1 200);
+  --accent-soft:  oklch(68% 0.06 195);
+  --seal:         oklch(50% 0.18 25);    /* 朱砂印章红 */
+  --rule:         oklch(80% 0.025 85);
+  --rule-soft:    oklch(86% 0.02 84);
+  --highlight:    oklch(85% 0.05 75);
 }
 
-/* 夜间：墨色纸，更松的行距补偿轻字重感知 */
+/* 夜间：墨色纸 · 青灯映夜 */
 [data-theme="night"] {
-  --paper:        oklch(17% 0.008 55);
-  --paper-soft:   oklch(20% 0.01 55);
-  --paper-deep:   oklch(24% 0.012 55);
-  --ink:          oklch(93% 0.012 85);
-  --ink-soft:     oklch(78% 0.014 80);
-  --ink-mute:     oklch(64% 0.012 70);
-  --ink-faint:    oklch(52% 0.01 65);
-  --accent:       oklch(70% 0.13 50);
-  --accent-deep:  oklch(62% 0.14 48);
-  --accent-soft:  oklch(45% 0.08 50);
-  --rule:         oklch(32% 0.012 60);
-  --rule-soft:    oklch(26% 0.008 58);
-  --highlight:    oklch(38% 0.07 70);
+  --paper:        oklch(18% 0.01 250);   /* 墨色纸带青 */
+  --paper-soft:   oklch(21% 0.012 250);
+  --paper-deep:   oklch(25% 0.015 248);
+  --ink:          oklch(90% 0.035 85);   /* 泛黄白 */
+  --ink-soft:     oklch(76% 0.03 85);
+  --ink-mute:     oklch(62% 0.025 80);
+  --ink-faint:    oklch(50% 0.02 75);
+  --accent:       oklch(68% 0.1 200);    /* 青提亮 */
+  --accent-deep:  oklch(60% 0.11 198);
+  --accent-soft:  oklch(42% 0.07 200);
+  --seal:         oklch(58% 0.16 25);    /* 朱砂提亮 */
+  --rule:         oklch(32% 0.015 250);
+  --rule-soft:    oklch(26% 0.012 248);
+  --highlight:    oklch(40% 0.06 250);
   --leading-body: 1.7;
 }
 
@@ -353,7 +355,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   line-height: 0.82;
   float: left;
   margin: 0.08em 0.12em 0 -0.04em;
-  color: var(--accent-deep);
+  color: var(--seal);
   font-variation-settings: "opsz" 144, "SOFT" 60;
 }
 .lead__body p mark {
@@ -507,7 +509,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 }
 
 /* ============================================================
-   边栏 Marginalia
+   边栏 青灯黄卷
    ============================================================ */
 .sidebar { display: grid; gap: var(--space-xl); align-content: start; }
 
@@ -803,7 +805,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   <!-- ============================== Masthead ============================== -->
   <header class="masthead">
     <div class="masthead__top">
-      <a class="wordmark" href="#">Marginalia</a>
+      <a class="wordmark" href="#">青灯黄卷</a>
 
       <div class="masthead__meta" aria-label="刊物信息">
         <span>Vol. III · Issue 27</span>
@@ -824,7 +826,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
     </nav>
 
     <p class="masthead__tagline">
-      <em>页边批注</em>——林深的个人写作日志。在代码与工艺的间隙处，为那些值得停下来重读的细节留一笔。
+      <em>青灯黄卷</em>——一份静谧的阅读札记。青灯之下，黄卷之间，为值得重读的字句留一笔朱批。
     </p>
   </header>
 
@@ -935,13 +937,13 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
     </div>
 
     <div class="about__text reveal" data-delay="1">
-      <h2>关于<em>林深</em></h2>
+      <h2>关于<em>青灯</em></h2>
       <p class="role">写作者 · 工程师 · 偶尔的排印爱好者</p>
       <p>
         我在一家做开发者工具的小公司写代码，业余写一些关于「为什么这样比那样好」的长文。我相信好界面和好代码共享同一种品质——它们都不急着解释自己。
       </p>
       <p>
-        Marginalia 始于 2023 年的一个雨夜，最初只是想给读过的书留点批注，后来慢慢长成了现在这样：一份关于工艺、代码与好奇心的不定期刊物。如果你也愿意在细节里多停一会儿，欢迎留下来。
+        青灯黄卷 始于 2023 年的一个雨夜，最初只是想给读过的书留点批注，后来慢慢长成了现在这样：一份关于工艺、代码与好奇心的不定期刊物。如果你也愿意在细节里多停一会儿，欢迎留下来。
       </p>
       <div class="about__links">
         <a href="#">完整档案 →</a>
@@ -955,7 +957,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   <footer class="colophon">
     <div class="colophon__grid">
       <div class="colophon__col">
-        <div class="colophon__mark">Marginalia<span>.</span></div>
+        <div class="colophon__mark">青灯黄卷<span>.</span></div>
         <p style="margin-top:var(--space-sm)">一份关于工艺、代码与好奇心的<br/>不定期个人刊物。</p>
       </div>
 
@@ -982,7 +984,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
     </div>
 
     <div class="colophon__bottom">
-      <span>© 2023–2026 林深 · 保留所有批注</span>
+      <span>© 2023–2026 青灯 · 保留所有批注</span>
       <span>设于纸面 · 排于屏幕</span>
       <span>Issue 27 · 印于 2026.07</span>
     </div>
