@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title><!--TITLE-ESC--> · Marginalia</title>
+<title><!--TITLE-ESC--> · 青灯黄卷</title>
 <meta name="description" content="<!--DECK-->" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Newsreader:opsz,ital,wght@6..72,0,400;6..72,0,500;6..72,1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Newsreader:opsz,ital,wght@6..72,0,400;6..72,0,500;6..72,1,400&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@300;400;500;600&display=swap" rel="stylesheet" />
 
 <style>
 /* === 设计令牌（与 index.html 同源） === */
 :root {
-  --font-display: "Fraunces", "Songti SC", "Noto Serif SC", Georgia, serif;
-  --font-body: "Newsreader", "Songti SC", "Noto Serif SC", Georgia, serif;
+  --font-display: "Fraunces", "Noto Serif SC", "Songti SC", Georgia, serif;
+  --font-body: "Newsreader", "Noto Serif SC", "Songti SC", Georgia, serif;
   --font-mono: "IBM Plex Mono", "SFMono-Regular", ui-monospace, monospace;
   --step--1: clamp(0.75rem, 0.72rem + 0.15vw, 0.84rem);
   --step-0:  clamp(1.0625rem, 1.02rem + 0.22vw, 1.1875rem);
@@ -32,26 +32,28 @@
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 [data-theme="day"] {
-  --paper: oklch(96.5% 0.012 85); --paper-soft: oklch(94% 0.016 84);
-  --paper-deep: oklch(91% 0.02 82);
-  --ink: oklch(22% 0.018 55); --ink-soft: oklch(38% 0.02 55);
-  --ink-mute: oklch(52% 0.018 55); --ink-faint: oklch(64% 0.014 60);
-  --accent: oklch(52% 0.135 46); --accent-deep: oklch(42% 0.14 44);
-  --accent-soft: oklch(72% 0.07 60);
-  --rule: oklch(82% 0.012 75); --rule-soft: oklch(88% 0.008 80);
-  --highlight: oklch(88% 0.06 85);
-  --code-bg: oklch(93% 0.01 80);
+  --paper: oklch(90% 0.04 85); --paper-soft: oklch(88% 0.045 85);
+  --paper-deep: oklch(85% 0.05 84);
+  --ink: oklch(25% 0.02 250); --ink-soft: oklch(40% 0.025 250);
+  --ink-mute: oklch(55% 0.02 245); --ink-faint: oklch(68% 0.015 240);
+  --accent: oklch(48% 0.09 200); --accent-deep: oklch(38% 0.1 200);
+  --accent-soft: oklch(68% 0.06 195);
+  --seal: oklch(50% 0.18 25);
+  --rule: oklch(80% 0.025 85); --rule-soft: oklch(86% 0.02 84);
+  --highlight: oklch(85% 0.05 75);
+  --code-bg: oklch(88% 0.02 84);
 }
 [data-theme="night"] {
-  --paper: oklch(17% 0.008 55); --paper-soft: oklch(20% 0.01 55);
-  --paper-deep: oklch(24% 0.012 55);
-  --ink: oklch(93% 0.012 85); --ink-soft: oklch(78% 0.014 80);
-  --ink-mute: oklch(64% 0.012 70); --ink-faint: oklch(52% 0.01 65);
-  --accent: oklch(70% 0.13 50); --accent-deep: oklch(62% 0.14 48);
-  --accent-soft: oklch(45% 0.08 50);
-  --rule: oklch(32% 0.012 60); --rule-soft: oklch(26% 0.008 58);
-  --highlight: oklch(38% 0.07 70);
-  --code-bg: oklch(24% 0.008 55);
+  --paper: oklch(18% 0.01 250); --paper-soft: oklch(21% 0.012 250);
+  --paper-deep: oklch(25% 0.015 248);
+  --ink: oklch(90% 0.035 85); --ink-soft: oklch(76% 0.03 85);
+  --ink-mute: oklch(62% 0.025 80); --ink-faint: oklch(50% 0.02 75);
+  --accent: oklch(68% 0.1 200); --accent-deep: oklch(60% 0.11 198);
+  --accent-soft: oklch(42% 0.07 200);
+  --seal: oklch(58% 0.16 25);
+  --rule: oklch(32% 0.015 250); --rule-soft: oklch(26% 0.012 248);
+  --highlight: oklch(40% 0.06 250);
+  --code-bg: oklch(25% 0.012 248);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -149,7 +151,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .prose > p:first-of-type::first-letter {
   font-family: var(--font-display); font-weight: 360; font-size: 4.2em;
   line-height: 0.82; float: left; margin: 0.08em 0.12em 0 -0.04em;
-  color: var(--accent-deep); font-variation-settings: "opsz" 144, "SOFT" 60;
+  color: var(--seal); font-variation-settings: "opsz" 144, "SOFT" 60;
 }
 .prose h2 {
   font-family: var(--font-display); font-weight: 380;
@@ -175,7 +177,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   font-family: var(--font-body); font-style: italic;
   font-size: var(--step-1); line-height: var(--leading-snug);
   color: var(--ink-soft); margin: var(--space-lg) 0;
-  padding-left: var(--space-md); border-left: 3px solid var(--accent-soft);
+  padding-left: var(--space-md); border-left: 3px solid var(--seal);
 }
 .prose blockquote p { font-size: inherit; margin: 0; }
 .prose blockquote p + p { margin-top: var(--space-sm); }
@@ -247,7 +249,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 <div class="page">
 
   <header class="post-masthead">
-    <a class="wordmark" href="../index.html">Marginalia</a>
+    <a class="wordmark" href="../index.html">青灯黄卷</a>
     <div class="right">
       <a class="back-home" href="../index.html">← 返回刊物</a>
       <button class="theme-toggle" id="themeToggle" aria-label="切换日夜主题">
@@ -267,7 +269,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
       <h1 class="post-header__title reveal" data-delay="1"><!--TITLEHTML--></h1>
       <p class="post-header__deck reveal" data-delay="2"><!--DECK--></p>
       <div class="post-header__byline reveal" data-delay="2">
-        <span class="author">林深 · 撰稿</span>
+        <span class="author">青灯 · 撰稿</span>
         <span class="dot" aria-hidden="true"></span>
         <span>约 <!--READ--></span>
         <span class="dot" aria-hidden="true"></span>
@@ -285,7 +287,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
     </nav>
 
     <footer class="post-colophon">
-      <span>© 2023–2026 林深 · Marginalia</span>
+      <span>© 2023–2026 青灯 · 青灯黄卷</span>
       <span>设于纸面 · 排于屏幕</span>
     </footer>
   </article>
