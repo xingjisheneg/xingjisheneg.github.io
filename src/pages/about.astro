@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { about, site } from '../config';
+
+// Person JSON-LD
+const personJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": about.name,
+  "description": about.paragraphs.join(' '),
+  "url": new URL('/about', Astro.site).href,
+  "jobTitle": about.role,
+  "sameAs": about.contacts
+    .filter(c => c.href.startsWith('http'))
+    .map(c => c.href),
+};
+---
+<BaseLayout title={`关于 · ${site.name}`} active="about">
+  <script type="application/ld+json" slot="ld-json" set:html={JSON.stringify(personJsonLd)} />
+  <div class="container">
+    <div class="about-wrap">
+      <div class="about-hero">
+        <div class="avatar">{about.avatar}</div>
+        <div>
+          <h1>{about.name}</h1>
+          <div class="role">{about.role}</div>
+        </div>
+      </div>
+      <div class="about-prose">
+        {about.paragraphs.map(p => <p>{p}</p>)}
+        <blockquote>{about.quote}</blockquote>
+        <h3 style="font-size:1.1rem;font-weight:600;margin:1.6rem 0 .6rem">{about.statusTitle}</h3>
+        <ul class="about-list">
+          {about.status.map(s => <li><b>{s.label}</b>　{s.value}</li>)}
+        </ul>
+      </div>
+      <div class="contact-row">
+        {about.contacts.map(c => <a href={c.href}>{c.label}</a>)}
+      </div>
+    </div>
+  </div>
+</BaseLayout>
