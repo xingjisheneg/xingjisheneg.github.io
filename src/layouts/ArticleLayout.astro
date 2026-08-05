@@ -1,0 +1,62 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+const { item, section, sectionLabel, prev, next } = Astro.props;
+const headings = item.body.split('\n').filter(l => l.startsWith('## ')).map(l => l.replace(/^##\s+/, ''));
+const day = item.data.date.slice(8);
+const month = item.data.date.slice(5,7) + '月';
+---
+<BaseLayout title={`${item.data.title} · 青灯黄卷`} active={section}>
+  <div class="progress-bar"><i id="progFill"></i></div>
+  <div class="container">
+    <div class="article-layout">
+      <nav class="toc" id="articleToc">
+        <div class="tt">目　录</div>
+        {headings.map((h, i) => <a href={`#h${i}`} data-t={`h${i}`}>{h}</a>)}
+      </nav>
+      <div class="article-col">
+        <div class="article-head">
+          <div class="crumb">{sectionLabel} / {item.data.date}</div>
+          <h1>{item.data.title}</h1>
+          <div class="by">{item.data.date} · 约 {item.data.read}{item.data.src && <span class="src">· {item.data.src}</span>}</div>
+          <div class="atags">{item.data.tags.map(t => <span class="tag">{t}</span>)}</div>
+        </div>
+        <article class="prose" id="articleBody">
+          <slot />
+        </article>
+        <div class="article-foot">
+          <div class="pager">
+            {prev && <a href={`/${section}/${prev.slug}/`}>← {prev.data.title}</a>}
+            {next && <a href={`/${section}/${next.slug}/`}>{next.data.title} →</a>}
+          </div>
+          <div class="readinfo">最后修订 {item.data.date} · 约 {item.data.read}</div>
+        </div>
+      </div>
+      <div></div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script is:inline>
+  (function(){
+    const fill=document.getElementById('progFill');
+    const links=[...document.querySelectorAll('#articleToc a')];
+    const heads=links.map(l=>document.getElementById(l.getAttribute('data-t'))).filter(Boolean);
+    // assign IDs to h2
+    document.querySelectorAll('#articleBody h2').forEach((h,i)=>{h.id='h'+i;});
+    function onScroll(){
+      const art=document.getElementById('articleBody');
+      if(!art)return;
+      const r=art.getBoundingClientRect();
+      const vh=window.innerHeight;
+      const ratio=Math.max(0,Math.min(1,(vh-r.top)/(r.height||1)));
+      if(fill)fill.style.width=(ratio*100).toFixed(1)+'%';
+      let active=heads[0]?heads[0].id:null;
+      const line=vh*0.4;
+      heads.forEach(h=>{if(h.getBoundingClientRect().top<=line)active=h.id;});
+      links.forEach(a=>a.classList.toggle('active',a.getAttribute('data-t')===active));
+    }
+    window.addEventListener('scroll',onScroll,{passive:true});
+    onScroll();
+  })();
+</script>
