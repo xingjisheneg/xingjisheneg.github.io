@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import { getCollection } from 'astro:content';
+
+const notes = (await getCollection('notes')).sort((a,b) => b.data.date.localeCompare(a.data.date));
+---
+<BaseLayout title="阅读札记 · 青灯黄卷" active="notes">
+  <div class="container">
+    <div class="hero" style="padding-top:0">
+      <div class="vol">阅读札记</div>
+      <h1 style="font-size:clamp(2rem,5vw,2.8rem)">札记</h1>
+      <p class="lede">书评、摘抄与批注。为读过的书，留一笔朱批。</p>
+    </div>
+    <div class="cards">
+      {notes.map(it => <ArticleCard item={it} section="notes" />)}
+    </div>
+  </div>
+</BaseLayout>
