@@ -3,49 +3,50 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ArticleCard from '../components/ArticleCard.astro';
 import WorkCard from '../components/WorkCard.astro';
 import { getCollection } from 'astro:content';
+import { hero, sections, site } from '../config';
 
 const notes = (await getCollection('notes')).sort((a,b) => b.data.date.localeCompare(a.data.date));
 const essays = (await getCollection('essays')).sort((a,b) => b.data.date.localeCompare(a.data.date));
 const works = (await getCollection('works')).sort((a,b) => a.data.order - b.data.order);
 ---
-<BaseLayout title="青灯黄卷 · QD" active="notes">
+<BaseLayout title={`${site.name} · ${site.author}`} active="notes">
   <div class="container">
     <div class="hero">
-      <div class="seal-stamp">青<br>灯</div>
-      <div class="vol">Vol. III · Issue 28 · 2026 夏夜读</div>
-      <h1>青灯黄卷</h1>
-      <p class="lede">青灯之下，黄卷之间，为值得重读的字句留一笔朱批。这里写<b>阅读札记</b>、<b>生活随笔</b>，也放我做的些<b>小东西</b>。</p>
+      <div class="seal-stamp">{hero.seal.map(s => <>{s}<br/></>)}</div>
+      <div class="vol">{hero.vol}</div>
+      <h1>{hero.title}</h1>
+      <p class="lede" set:html={hero.lede} />
       <div class="meta-row">
-        <span class="chip"><b>QD</b>青灯 · 写作者 工程师</span>
-        <span class="chip"><b>RSS</b>订阅</span>
-        <span class="chip"><b>2023—</b>始于一个雨夜</span>
+        {hero.chips.map(chip => (
+          <span class="chip"><b>{chip.hi}</b>{chip.text}</span>
+        ))}
       </div>
     </div>
 
     <section class="sec-block">
       <div class="sec-head">
-        <h2>阅读札记<span class="sec-sub">书评 · 摘抄 · 批注</span></h2>
-        <a class="sec-more" href="/notes">全部 {notes.length} 篇 →</a>
+        <h2>{sections.notes.title}<span class="sec-sub">{sections.notes.sub}</span></h2>
+        <a class="sec-more" href="/notes">{sections.notes.moreLabel.replace('{n}', notes.length)}</a>
       </div>
       <div class="cards">
-        {notes.slice(0, 4).map(it => <ArticleCard item={it} section="notes" />)}
+        {notes.slice(0, sections.notes.showCount).map(it => <ArticleCard item={it} section="notes" />)}
       </div>
     </section>
 
     <section class="sec-block">
       <div class="sec-head">
-        <h2>随笔·生活<span class="sec-sub">城市 · 随想 · 日常</span></h2>
-        <a class="sec-more" href="/essays">全部 {essays.length} 篇 →</a>
+        <h2>{sections.essays.title}<span class="sec-sub">{sections.essays.sub}</span></h2>
+        <a class="sec-more" href="/essays">{sections.essays.moreLabel.replace('{n}', essays.length)}</a>
       </div>
       <div class="cards">
-        {essays.slice(0, 3).map(it => <ArticleCard item={it} section="essays" />)}
+        {essays.slice(0, sections.essays.showCount).map(it => <ArticleCard item={it} section="essays" />)}
       </div>
     </section>
 
     <section class="sec-block">
       <div class="sec-head">
-        <h2>作品集<span class="sec-sub">写代码也是一种手艺</span></h2>
-        <a class="sec-more" href="/works">全部 {works.length} 个 →</a>
+        <h2>{sections.works.title}<span class="sec-sub">{sections.works.sub}</span></h2>
+        <a class="sec-more" href="/works">{sections.works.moreLabel.replace('{n}', works.length)}</a>
       </div>
       <div class="work-grid">
         {works.map((w, i) => <WorkCard work={w} index={i} />)}
