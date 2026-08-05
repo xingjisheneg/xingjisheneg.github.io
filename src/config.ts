@@ -28,12 +28,12 @@ export const site = {
 export const nav = {
   /** 左上角站点名称（如需与 site.name 不同可单独设置） */
   brand: '青灯黄卷',
-  /** 导航选项卡 */
+  /** 导航选项卡（count 由系统自动获取，无需手动填写） */
   items: [
-    { label: '札记', href: '/',     key: 'notes',   count: 12 },
-    { label: '随笔', href: '/essays', key: 'essays', count: 7  },
-    { label: '作品', href: '/works',  key: 'works',  count: 5  },
-    { label: '关于', href: '/about',  key: 'about',  count: null },
+    { label: '札记', href: '/',     key: 'notes'   },
+    { label: '随笔', href: '/essays', key: 'essays' },
+    { label: '作品', href: '/works',  key: 'works'  },
+    { label: '关于', href: '/about',  key: 'about'  },
   ],
 };
 
