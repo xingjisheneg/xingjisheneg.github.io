@@ -1,0 +1,56 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ArticleCard from '../components/ArticleCard.astro';
+import WorkCard from '../components/WorkCard.astro';
+import { getCollection } from 'astro:content';
+import { hero, sections, site } from '../config';
+
+const notes = (await getCollection('notes')).sort((a,b) => b.data.date.localeCompare(a.data.date));
+const essays = (await getCollection('essays')).sort((a,b) => b.data.date.localeCompare(a.data.date));
+const works = (await getCollection('works')).sort((a,b) => a.data.order - b.data.order);
+---
+<BaseLayout title={`${site.name} · ${site.author}`} active="notes">
+  <div class="container">
+    <div class="hero">
+      <div class="seal-stamp">{hero.seal.map(s => <>{s}<br/></>)}</div>
+      <div class="vol">{hero.vol}</div>
+      <h1>{hero.title}</h1>
+      <p class="lede" set:html={hero.lede} />
+      <div class="meta-row">
+        {hero.chips.map(chip => (
+          <span class="chip"><b>{chip.hi}</b>{chip.text}</span>
+        ))}
+      </div>
+    </div>
+
+    <section class="sec-block">
+      <div class="sec-head">
+        <h2>{sections.notes.title}<span class="sec-sub">{sections.notes.sub}</span></h2>
+        <a class="sec-more" href="/notes">{sections.notes.moreLabel.replace('{n}', notes.length)}</a>
+      </div>
+      <div class="cards">
+        {notes.slice(0, sections.notes.showCount).map(it => <ArticleCard item={it} section="notes" />)}
+      </div>
+    </section>
+
+    <section class="sec-block">
+      <div class="sec-head">
+        <h2>{sections.essays.title}<span class="sec-sub">{sections.essays.sub}</span></h2>
+        <a class="sec-more" href="/essays">{sections.essays.moreLabel.replace('{n}', essays.length)}</a>
+      </div>
+      <div class="cards">
+        {essays.slice(0, sections.essays.showCount).map(it => <ArticleCard item={it} section="essays" />)}
+      </div>
+    </section>
+
+    <section class="sec-block">
+      <div class="sec-head">
+        <h2>{sections.works.title}<span class="sec-sub">{sections.works.sub}</span></h2>
+        <a class="sec-more" href="/works">{sections.works.moreLabel.replace('{n}', works.length)}</a>
+      </div>
+      <div class="work-grid">
+        {works.map((w, i) => <WorkCard work={w} index={i} />)}
+      </div>
+    </section>
+  </div>
+</BaseLayout>
