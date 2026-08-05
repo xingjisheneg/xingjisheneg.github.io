@@ -7,8 +7,50 @@ const headings = item.body.split('\n').filter(l => l.startsWith('## ')).map(l =>
 const day = item.data.date ? item.data.date.slice(8) : '';
 const month = item.data.date ? item.data.date.slice(5,7) + '月' : '';
 const description = item.data.excerpt || site.description;
+const articleURL = new URL(`/${section}/${item.slug}/`, Astro.site).href;
+
+// 根据内容类型选择 JSON-LD schema
+// 札记/随笔 → BlogPosting，作品 → CreativeWork
+const isWork = section === 'works';
+const articleJsonLd = isWork ? {
+  "@context": "https://schema.org",
+  "@type": "CreativeWork",
+  "name": item.data.title,
+  "description": item.data.desc || description,
+  "url": articleURL,
+  "author": {
+    "@type": "Person",
+    "name": site.author,
+  },
+  "publisher": {
+    "@type": "Person",
+    "name": site.author,
+  },
+} : {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": item.data.title,
+  "description": description,
+  "url": articleURL,
+  "author": {
+    "@type": "Person",
+    "name": site.author,
+  },
+  "publisher": {
+    "@type": "Person",
+    "name": site.author,
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": articleURL,
+  },
+  ...(item.data.date ? { "datePublished": item.data.date, "dateModified": item.data.date } : {}),
+  ...(item.data.tags?.length ? { "keywords": item.data.tags.join(', ') } : {}),
+  ...(item.data.src ? { "about": item.data.src } : {}),
+};
 ---
 <BaseLayout title={`${item.data.title} · ${site.name}`} description={description} active={section}>
+  <script type="application/ld+json" slot="ld-json" set:html={JSON.stringify(articleJsonLd)} />
   <div class="progress-bar"><i id="progFill"></i></div>
   <div class="container">
     <div class="article-layout">
