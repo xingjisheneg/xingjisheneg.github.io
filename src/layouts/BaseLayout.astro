@@ -6,6 +6,24 @@ import { site } from '../config';
 
 const { title = `${site.name} · ${site.author}`, description = site.description, active = '' } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+
+// WebSite 级 JSON-LD（所有页面通用）
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": site.name,
+  "description": site.description,
+  "url": Astro.site?.href || `https://${site.domain}/`,
+  "author": {
+    "@type": "Person",
+    "name": site.author,
+  },
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": `${Astro.site?.href || `https://${site.domain}/`}search?q={search_term_string}`,
+    "query-input": "required name=search_term_string",
+  },
+};
 ---
 <!DOCTYPE html>
 <html lang="zh-CN" data-theme="light">
@@ -27,6 +45,9 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;700&family=Ma+Shan+Zheng&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
   <link rel="alternate" type="application/rss+xml" title={site.name} href="/rss.xml" />
+  <link rel="sitemap" type="application/xml" title={site.name} href="/sitemap.xml" />
+  <script type="application/ld+json" set:html={JSON.stringify(websiteJsonLd)} />
+  <slot name="ld-json" />
   <script is:inline>
     (function(){
       let s=null;try{s=localStorage.getItem('qd-theme')}catch(e){}
