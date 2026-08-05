@@ -19,9 +19,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const meta = document.getElementById('meta');
       let data = null;
 
-      fetch('/search.json').then(r => r.json()).then(d => { data = d; doSearch(''); });
+      fetch('/search.json').then(r => r.json()).then(d => { data = d; doSearch(''); }).catch(err => { meta.textContent = '搜索索引加载失败，请刷新重试'; });
 
       function escapeRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+      function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
       function highlight(text, q) {
         if(!q) return text;
         const re = new RegExp('(' + escapeRe(q) + ')', 'gi');
@@ -49,11 +50,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
         results.innerHTML = matched.map(it => {
           const dateStr = it.date ? it.date.slice(5).replace('-', '/') : '';
-          return `<a class="sr-item" href="${it.url}">
-            <div class="st">${highlight(it.title, q)}${it.sectionLabel ? '<span class="sec">' + it.sectionLabel + '</span>' : ''}</div>
+          const safeTitle = escapeHtml(it.title);
+          const safeExcerpt = escapeHtml(it.excerpt);
+          const safeUrl = escapeHtml(it.url);
+          return `<a class="sr-item" href="${safeUrl}">
+            <div class="st">${highlight(safeTitle, q)}${it.sectionLabel ? '<span class="sec">' + escapeHtml(it.sectionLabel) + '</span>' : ''}</div>
             ${dateStr ? '<div class="sd">' + dateStr + '</div>' : ''}
-            <div class="ss">${highlight(it.excerpt, q)}</div>
-            ${it.tags && it.tags.length ? '<div class="stags">' + it.tags.map(t => '<span class="stag">'+highlight(t,q)+'</span>').join('') + '</div>' : ''}
+            <div class="ss">${highlight(safeExcerpt, q)}</div>
+            ${it.tags && it.tags.length ? '<div class="stags">' + it.tags.map(t => '<span class="stag">'+highlight(escapeHtml(t),q)+'</span>').join('') + '</div>' : ''}
           </a>`;
         }).join('');
       }
