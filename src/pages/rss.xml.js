@@ -1,5 +1,6 @@
 import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
+import { rss as rssCfg } from '../config';
 
 export async function GET(context) {
   const notes = (await getCollection('notes')).sort((a,b) => b.data.date.localeCompare(a.data.date));
@@ -10,8 +11,8 @@ export async function GET(context) {
   ].sort((a,b) => b.date.localeCompare(a.date));
 
   return rss({
-    title: '青灯黄卷',
-    description: '青灯之下，黄卷之间，为值得重读的字句留一笔朱批。',
+    title: rssCfg.title,
+    description: rssCfg.description,
     site: context.site,
     items: all.map(item => ({
       title: item.title,
