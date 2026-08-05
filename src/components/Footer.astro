@@ -1,5 +1,12 @@
 ---
+import { footer } from '../config';
 ---
 <footer class="site-foot">
-  <span>青灯黄卷</span><span class="v">·</span><span>QD</span><span class="v">·</span><span>xingjisheneg.github.io</span><span class="v">·</span><a href="/rss.xml">RSS</a><span class="v">·</span><span>© 2023—2026</span>
+  {footer.parts.map((p, i) => (
+    <>
+      {i > 0 && <span class="v">·</span>}
+      <span>{p}</span>
+    </>
+  ))}
+  {footer.rssLabel && <><span class="v">·</span><a href="/rss.xml">{footer.rssLabel}</a></>}
 </footer>
