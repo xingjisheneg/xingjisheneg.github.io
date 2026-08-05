@@ -1,0 +1,13 @@
+---
+const { item, section } = Astro.props;
+const day = item.data.date.slice(8);
+const month = item.data.date.slice(5, 7) + '月';
+---
+<a href={`/${section}/${item.slug}/`} class="card">
+  <div class="card-date"><span class="d">{day}</span><span class="m">{month}</span></div>
+  <div class="card-body">
+    <div class="card-title">{item.data.title}{item.data.src && <span class="src">· {item.data.src}</span>}</div>
+    <div class="card-excerpt">{item.data.excerpt}</div>
+    <div class="tags">{item.data.tags.map(t => <span class="tag">{t}</span>)}</div>
+  </div>
+</a>
