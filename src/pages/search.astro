@@ -1,0 +1,92 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="搜索 · 青灯黄卷">
+  <div class="container">
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="q" type="text" placeholder="搜索文章、作品…" autofocus />
+      </div>
+      <div class="search-meta" id="meta"></div>
+      <div id="results"></div>
+    </div>
+  </div>
+  <script is:inline>
+    (function(){
+      const input = document.getElementById('q');
+      const results = document.getElementById('results');
+      const meta = document.getElementById('meta');
+      let data = null;
+
+      fetch('/search.json').then(r => r.json()).then(d => { data = d; doSearch(''); }).catch(err => { meta.textContent = '搜索索引加载失败，请刷新重试'; });
+
+      function escapeRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+      function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+      function highlight(text, q) {
+        if(!q) return text;
+        const re = new RegExp('(' + escapeRe(q) + ')', 'gi');
+        return text.replace(re, '<b>$1</b>');
+      }
+
+      function doSearch(q) {
+        if(!data) return;
+        if(!q) {
+          meta.textContent = `共 ${data.length} 篇内容，输入关键词开始搜索`;
+          results.innerHTML = '';
+          return;
+        }
+        const ql = q.toLowerCase();
+        const matched = data.filter(it =>
+          it.title.toLowerCase().includes(ql) ||
+          it.excerpt.toLowerCase().includes(ql) ||
+          it.src.toLowerCase().includes(ql) ||
+          (it.tags || []).some(t => t.toLowerCase().includes(ql))
+        );
+        meta.textContent = `找到 ${matched.length} 条结果`;
+        if(matched.length === 0) {
+          results.innerHTML = '<div class="search-empty">青灯之下，未寻得此卷。<br>换个词试试？</div>';
+          return;
+        }
+        results.innerHTML = matched.map(it => {
+          const dateStr = it.date ? it.date.slice(5).replace('-', '/') : '';
+          const safeTitle = escapeHtml(it.title);
+          const safeExcerpt = escapeHtml(it.excerpt);
+          const safeUrl = escapeHtml(it.url);
+          return `<a class="sr-item" href="${safeUrl}">
+            <div class="st">${highlight(safeTitle, q)}${it.sectionLabel ? '<span class="sec">' + escapeHtml(it.sectionLabel) + '</span>' : ''}</div>
+            ${dateStr ? '<div class="sd">' + dateStr + '</div>' : ''}
+            <div class="ss">${highlight(safeExcerpt, q)}</div>
+            ${it.tags && it.tags.length ? '<div class="stags">' + it.tags.map(t => '<span class="stag">'+highlight(escapeHtml(t),q)+'</span>').join('') + '</div>' : ''}
+          </a>`;
+        }).join('');
+      }
+
+      let timer;
+      input.addEventListener('input', e => {
+        clearTimeout(timer);
+        timer = setTimeout(() => doSearch(e.target.value.trim()), 150);
+      });
+    })();
+  </script>
+  <style>
+    .search-wrap{max-width:var(--read);margin:0 auto;padding-top:.5rem}
+    .search-box{display:flex;align-items:center;gap:.7rem;border:1px solid var(--rule2);border-radius:var(--r);padding:.8rem 1.1rem;background:var(--paper);transition:.2s}
+    .search-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent)}
+    .search-box svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:1.6;flex:none}
+    .search-box input{flex:1;border:none;background:none;color:var(--ink);font-family:var(--serif);font-size:1.05rem;outline:none}
+    .search-box input::placeholder{color:var(--faint)}
+    .search-meta{font-family:var(--latin);font-size:.84rem;color:var(--faint);font-style:italic;margin:1.2rem 0 .4rem;padding:0 .2rem}
+    .sr-item{display:block;padding:1rem 1.1rem;border-bottom:1px solid var(--rule);transition:.15s;border-radius:var(--r)}
+    .sr-item:hover{background:var(--bg2)}
+    .sr-item .st{font-size:1rem;font-weight:600;color:var(--ink)}
+    .sr-item .st .sec{font-family:var(--kai);font-size:.78rem;color:var(--accent);font-weight:400;margin-left:.5rem}
+    .sr-item .sd{font-family:var(--latin);font-size:.78rem;color:var(--faint);font-style:italic;margin-top:.2rem}
+    .sr-item .ss{margin-top:.3rem;font-size:.88rem;color:var(--muted);line-height:1.7}
+    .sr-item .ss b{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);font-weight:500;padding:0 .15em;border-radius:2px}
+    .sr-item .st b{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);font-weight:600;padding:0 .15em;border-radius:2px}
+    .stags{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem}
+    .stag{font-size:.72rem;color:var(--accent2);border:1px solid var(--rule2);border-radius:12px;padding:.08rem .55rem}
+    .search-empty{text-align:center;padding:3rem 1rem;color:var(--faint);font-family:var(--kai);font-size:1.05rem;line-height:2}
+  </style>
+</BaseLayout>
