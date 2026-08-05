@@ -1,0 +1,21 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const notes = (await getCollection('notes')).sort((a,b) => b.data.date.localeCompare(a.data.date));
+  return notes.map((item, i) => ({
+    params: { slug: item.slug },
+    props: {
+      item,
+      prev: i < notes.length - 1 ? notes[i + 1] : null,
+      next: i > 0 ? notes[i - 1] : null,
+    },
+  }));
+}
+const { item, prev, next } = Astro.props;
+const { Content } = await item.render();
+---
+<ArticleLayout item={item} section="notes" sectionLabel="阅读札记" prev={prev} next={next}>
+  <Content />
+</ArticleLayout>
