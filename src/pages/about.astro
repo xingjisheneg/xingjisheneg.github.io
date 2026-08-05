@@ -1,8 +1,22 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { about, site } from '../config';
+
+// Person JSON-LD
+const personJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": about.name,
+  "description": about.paragraphs.join(' '),
+  "url": new URL('/about', Astro.site).href,
+  "jobTitle": about.role,
+  "sameAs": about.contacts
+    .filter(c => c.href.startsWith('http'))
+    .map(c => c.href),
+};
 ---
 <BaseLayout title={`关于 · ${site.name}`} active="about">
+  <script type="application/ld+json" slot="ld-json" set:html={JSON.stringify(personJsonLd)} />
   <div class="container">
     <div class="about-wrap">
       <div class="about-hero">
