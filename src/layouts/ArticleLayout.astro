@@ -1,12 +1,14 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import { site } from '../config';
 
 const { item, section, sectionLabel, prev, next } = Astro.props;
 const headings = item.body.split('\n').filter(l => l.startsWith('## ')).map(l => l.replace(/^##\s+/, ''));
-const day = item.data.date.slice(8);
-const month = item.data.date.slice(5,7) + '月';
+const day = item.data.date ? item.data.date.slice(8) : '';
+const month = item.data.date ? item.data.date.slice(5,7) + '月' : '';
+const description = item.data.excerpt || site.description;
 ---
-<BaseLayout title={`${item.data.title} · 青灯黄卷`} active={section}>
+<BaseLayout title={`${item.data.title} · ${site.name}`} description={description} active={section}>
   <div class="progress-bar"><i id="progFill"></i></div>
   <div class="container">
     <div class="article-layout">
@@ -18,7 +20,11 @@ const month = item.data.date.slice(5,7) + '月';
         <div class="article-head">
           <div class="crumb">{sectionLabel} / {item.data.date}</div>
           <h1>{item.data.title}</h1>
-          <div class="by">{item.data.date} · 约 {item.data.read}{item.data.src && <span class="src">· {item.data.src}</span>}</div>
+          <div class="by">
+            {item.data.date && <>{item.data.date} · </>}
+            {item.data.read && <>约 {item.data.read}</>}
+            {item.data.src && <span class="src">· {item.data.src}</span>}
+          </div>
           <div class="atags">{item.data.tags.map(t => <span class="tag">{t}</span>)}</div>
         </div>
         <article class="prose" id="articleBody">
@@ -29,7 +35,11 @@ const month = item.data.date.slice(5,7) + '月';
             {prev && <a href={`/${section}/${prev.slug}/`}>← {prev.data.title}</a>}
             {next && <a href={`/${section}/${next.slug}/`}>{next.data.title} →</a>}
           </div>
-          <div class="readinfo">最后修订 {item.data.date} · 约 {item.data.read}</div>
+          <div class="readinfo">
+            {item.data.date && <>最后修订 {item.data.date}</>}
+            {item.data.date && item.data.read && <> · </>}
+            {item.data.read && <>约 {item.data.read}</>}
+          </div>
         </div>
       </div>
       <div></div>
