@@ -1,33 +1,27 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { about, site } from '../config';
 ---
-<BaseLayout title="关于 · 青灯黄卷" active="about">
+<BaseLayout title={`关于 · ${site.name}`} active="about">
   <div class="container">
     <div class="about-wrap">
       <div class="about-hero">
-        <div class="avatar">青</div>
+        <div class="avatar">{about.avatar}</div>
         <div>
-          <h1>QD · 青灯</h1>
-          <div class="role">写作者 · 工程师 · 偶尔的排印爱好者</div>
+          <h1>{about.name}</h1>
+          <div class="role">{about.role}</div>
         </div>
       </div>
       <div class="about-prose">
-        <p>我是 QD，青灯。白天在一家做开发者工具的小公司写代码，夜里读些杂书，写些"为什么这样比那样好"的长文。</p>
-        <p>我相信好界面和好代码共享同一种品质——它们都不急着解释自己。也相信读书和写代码一样，是慢的手艺，急不得。</p>
-        <p>青灯黄卷始于 2023 年的一个雨夜，最初只想给读过的书留点批注，后来慢慢长成了现在这样：一份关于工艺、代码与好奇心的不定期札记。如果你也愿意在细节里多停一会儿，欢迎留下来。</p>
-        <blockquote>好的判断需要时间，而时间是最被低估的设计工具。</blockquote>
-        <h3 style="font-size:1.1rem;font-weight:600;margin:1.6rem 0 .6rem">近况</h3>
+        {about.paragraphs.map(p => <p>{p}</p>)}
+        <blockquote>{about.quote}</blockquote>
+        <h3 style="font-size:1.1rem;font-weight:600;margin:1.6rem 0 .6rem">{about.statusTitle}</h3>
         <ul class="about-list">
-          <li><b>现在</b>　在写一个关于"克制"的系列</li>
-          <li><b>在读</b>　Tim Ingold《如何观看一棵树》</li>
-          <li><b>在听</b>　坂本龙一晚期钢琴小品</li>
-          <li><b>用的栈</b>　TypeScript · Astro · 一杯清茶</li>
-          <li><b>坐标</b>　南方某座多雨的城市</li>
+          {about.status.map(s => <li><b>{s.label}</b>　{s.value}</li>)}
         </ul>
       </div>
       <div class="contact-row">
-        <a href="/rss.xml">RSS 订阅</a>
-        <a href="https://github.com/xingjisheneg">GitHub</a>
+        {about.contacts.map(c => <a href={c.href}>{c.label}</a>)}
       </div>
     </div>
   </div>
