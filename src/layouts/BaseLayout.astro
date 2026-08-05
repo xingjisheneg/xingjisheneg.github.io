@@ -2,8 +2,10 @@
 import '../styles/global.css';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
+import { site } from '../config';
 
-const { title = '青灯黄卷 · QD', active = '' } = Astro.props;
+const { title = `${site.name} · ${site.author}`, description = site.description, active = '' } = Astro.props;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 ---
 <!DOCTYPE html>
 <html lang="zh-CN" data-theme="light">
@@ -11,10 +13,20 @@ const { title = '青灯黄卷 · QD', active = '' } = Astro.props;
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonicalURL} />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonicalURL} />
+  <meta property="og:site_name" content={site.name} />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;700&family=Ma+Shan+Zheng&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
-  <link rel="alternate" type="application/rss+xml" title="青灯黄卷" href="/rss.xml" />
+  <link rel="alternate" type="application/rss+xml" title={site.name} href="/rss.xml" />
   <script is:inline>
     (function(){
       let s=null;try{s=localStorage.getItem('qd-theme')}catch(e){}
@@ -25,7 +37,9 @@ const { title = '青灯黄卷 · QD', active = '' } = Astro.props;
 </head>
 <body>
   <Nav active={active} />
-  <slot />
+  <main>
+    <slot />
+  </main>
   <Footer />
   <script is:inline>
     (function(){
@@ -42,7 +56,11 @@ const { title = '青灯黄卷 · QD', active = '' } = Astro.props;
       });
       sync();
       const mb=document.getElementById('menuBtn');
-      if(mb)mb.addEventListener('click',()=>document.getElementById('nav').classList.toggle('open'));
+      if(mb)mb.addEventListener('click',()=>{
+        const nav=document.getElementById('nav');
+        nav.classList.toggle('open');
+        mb.setAttribute('aria-expanded',nav.classList.contains('open'));
+      });
     })();
   </script>
 </body>
