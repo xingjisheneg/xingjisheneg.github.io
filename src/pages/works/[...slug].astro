@@ -1,0 +1,17 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const works = (await getCollection('works')).sort((a,b) => a.data.order - b.data.order);
+  return works.map((item) => ({
+    params: { slug: item.slug },
+    props: { item },
+  }));
+}
+const { item } = Astro.props;
+const { Content } = await item.render();
+---
+<ArticleLayout item={{...item, data: {...item.data, date: '', read: '', tags: ['作品']}}} section="works" sectionLabel="作品集" prev={null} next={null}>
+  <Content />
+</ArticleLayout>
