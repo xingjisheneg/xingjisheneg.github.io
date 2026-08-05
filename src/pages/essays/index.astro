@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleCard from '../../components/ArticleCard.astro';
+import { getCollection } from 'astro:content';
+
+const essays = (await getCollection('essays')).sort((a,b) => b.data.date.localeCompare(a.data.date));
+---
+<BaseLayout title="随笔·生活 · 青灯黄卷" active="essays">
+  <div class="container">
+    <div class="hero" style="padding-top:0">
+      <div class="vol">随笔·生活</div>
+      <h1 style="font-size:clamp(2rem,5vw,2.8rem)">随笔</h1>
+      <p class="lede">非技术的所思所感。城市、生活、与一些不着边际的念头。</p>
+    </div>
+    <div class="cards">
+      {essays.map(it => <ArticleCard item={it} section="essays" />)}
+    </div>
+  </div>
+</BaseLayout>
