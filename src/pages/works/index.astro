@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import WorkCard from '../../components/WorkCard.astro';
+import { getCollection } from 'astro:content';
+
+const works = (await getCollection('works')).sort((a,b) => a.data.order - b.data.order);
+---
+<BaseLayout title="作品集 · 青灯黄卷" active="works">
+  <div class="container">
+    <div class="hero" style="padding-top:0">
+      <div class="vol">作品集</div>
+      <h1 style="font-size:clamp(2rem,5vw,2.8rem)">作品</h1>
+      <p class="lede">写代码也是一种手艺。这里是我做的些小东西。</p>
+    </div>
+    <div class="work-grid">
+      {works.map((w, i) => <WorkCard work={w} index={i} />)}
+    </div>
+  </div>
+</BaseLayout>
