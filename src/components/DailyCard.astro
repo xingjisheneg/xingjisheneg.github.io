@@ -175,7 +175,14 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
             backgroundColor:bg,
             scale:2,
             useCORS:true,
-            logging:false
+            logging:false,
+            onclone:function(doc){
+              /* 导出时加大间距，补偿 html2canvas 字体 metrics 差异 */
+              var dw=doc.querySelector('.dc-day-wrap');
+              if(dw){dw.style.height='110px';dw.style.marginBottom='28px';}
+              var dm=doc.querySelector('.dc-my');
+              if(dm){dm.style.marginBottom='12px';}
+            }
           });
         }).then(function(canvas){
           var now=new Date();
