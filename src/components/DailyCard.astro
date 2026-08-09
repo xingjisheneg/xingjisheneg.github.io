@@ -48,8 +48,8 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
 /* —— 视觉中心：日期数字 —— */
 .dc-hero{text-align:center;padding:.3rem 0 .7rem}
 .dc-my{font-family:var(--kai);font-size:.92rem;color:var(--muted);letter-spacing:.15em;margin-bottom:.5rem}
-.dc-day{font-family:var(--latin);font-size:5.5rem;font-weight:600;color:var(--ink);line-height:1.1;letter-spacing:-.02em;margin-bottom:.6rem}
-.dc-week{font-family:var(--kai);font-size:.82rem;color:var(--accent);letter-spacing:.2em}
+.dc-day{font-family:var(--latin);font-size:5.5rem;font-weight:600;color:var(--ink);line-height:1.2;letter-spacing:-.02em;margin-bottom:0;padding-bottom:.8rem}
+.dc-week{font-family:var(--kai);font-size:.82rem;color:var(--accent);letter-spacing:.2em;padding-top:.3rem}
 
 .dc-rule{height:1px;background:var(--rule);margin:.5rem auto .8rem;width:60%}
 
@@ -155,6 +155,9 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
           setTimeout(function(){exportBtn.textContent='存图';},1500);
           return;
         }
+        doExport();
+      });
+      function doExport(){
         /* 暂存并隐藏交互元素 */
         var hiddenEls=[exportBtn,hint];
         var prevDisplay=[];
@@ -163,11 +166,16 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
         });
         exportBtn.textContent='生成中…';
         var bg=getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()||'#FBF7EC';
-        html2canvas(box,{
-          backgroundColor:bg,
-          scale:2,
-          useCORS:true,
-          logging:false
+        /* 等待字体加载完成后再截图 */
+        var fontReady=Promise.resolve();
+        if(document.fonts&&document.fonts.ready){fontReady=document.fonts.ready;}
+        fontReady.then(function(){
+          return html2canvas(box,{
+            backgroundColor:bg,
+            scale:2,
+            useCORS:true,
+            logging:false
+          });
         }).then(function(canvas){
           var now=new Date();
           var fn='daily-'+now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+'.png';
@@ -183,7 +191,7 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
           });
           exportBtn.textContent='存图';
         });
-      });
+      }
     }
   })();
 </script>
