@@ -151,3 +151,17 @@ export const rss = {
   title: site.name,
   description: site.description,
 };
+
+/** 一言 · 题记（Hitokoto API）— 关于页右侧展示 */
+export const hitokoto = {
+  /** 总开关 */
+  enabled: true,
+  /** 分类筛选：i 诗词 / d 文学 / k 哲学 / a 动画 / b 漫画 / c 游戏 / e 原创 / f 网络 / g 其他 / h 影视 / j 网易云 / l 抖机灵 */
+  categories: ['i', 'd', 'k'],
+  /** 自动刷新间隔（秒），0 = 仅手动点击换句 */
+  autoRefresh: 0,
+  /** 点击换句开关 */
+  clickToRefresh: true,
+  /** API 失败时的兜底句 */
+  fallback: { text: '青灯之下，黄卷之间，为值得重读的字句留一笔朱批。', from: '青灯黄卷' },
+};
