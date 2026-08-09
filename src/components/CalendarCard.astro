@@ -1,0 +1,58 @@
+---
+import { calendar as cfg } from '../config';
+---
+{cfg.enabled && (
+  <div class="cal-box" data-calendar>
+    <div class="cal-label">{cfg.label}<span class="cal-line"></span></div>
+    <div class="cal-body">
+      <div class="cal-gzyear" data-cal-gzyear>丙午年</div>
+      <div class="cal-solar" data-cal-solar>—</div>
+      <div class="cal-week" data-cal-week>—</div>
+      <div class="cal-rule"></div>
+      <div class="cal-lunar" data-cal-lunar>—</div>
+      <div class="cal-gzmd" data-cal-gzmd>—</div>
+    </div>
+    <div class="cal-foot">
+      <span class="cal-hint">本地推算</span>
+      <span class="cal-seal">{cfg.seal}</span>
+    </div>
+  </div>
+)}
+<style>
+.cal-box{border:1px solid var(--rule);border-radius:var(--r);background:var(--paper);padding:1.6rem 1.5rem 1.3rem;position:relative;font-family:var(--serif)}
+.cal-label{font-family:var(--kai);color:var(--accent);font-size:.8rem;letter-spacing:.3em;display:flex;align-items:center;gap:.6rem;margin-bottom:1.3rem}
+.cal-line{flex:1;height:1px;background:var(--rule)}
+.cal-body{text-align:center}
+.cal-gzyear{font-family:var(--kai);font-size:1.7rem;color:var(--accent);letter-spacing:.08em;line-height:1.2;margin-bottom:.35rem}
+.cal-solar{font-size:.98rem;color:var(--ink);letter-spacing:.05em;margin-bottom:.2rem}
+.cal-week{font-family:var(--kai);font-size:.85rem;color:var(--muted);letter-spacing:.12em;margin-bottom:.9rem}
+.cal-rule{height:1px;background:var(--rule);margin:.9rem auto;width:55%}
+.cal-lunar{font-family:var(--kai);font-size:1.08rem;color:var(--ink);letter-spacing:.05em;margin-bottom:.35rem}
+.cal-gzmd{font-size:.82rem;color:var(--muted);letter-spacing:.06em}
+.cal-foot{display:flex;justify-content:space-between;align-items:center;margin-top:1.3rem;padding-top:1rem;border-top:1px dashed var(--rule)}
+.cal-hint{font-family:var(--kai);font-size:.74rem;color:var(--faint);letter-spacing:.12em}
+.cal-seal{width:32px;height:32px;border:2px solid var(--seal);color:var(--seal);display:flex;align-items:center;justify-content:center;font-family:var(--kai);font-size:1.05rem;border-radius:4px;transform:rotate(5deg);opacity:.82}
+</style>
+<script is:inline src="https://cdn.jsdelivr.net/npm/lunar-javascript@1/lunar.js"></script>
+<script is:inline>
+  (function(){
+    var box=document.querySelector('[data-calendar]');
+    if(!box)return;
+    function render(){
+      if(typeof Solar==='undefined'){setTimeout(render,200);return;}
+      try{
+        var weekCh=['日','一','二','三','四','五','六'];
+        var solar=Solar.fromDate(new Date());
+        var lunar=solar.getLunar();
+        box.querySelector('[data-cal-gzyear]').textContent=lunar.getYearInGanZhi()+'年 · '+lunar.getYearShengXiao();
+        box.querySelector('[data-cal-solar]').textContent=solar.getYear()+'年'+solar.getMonth()+'月'+solar.getDay()+'日';
+        box.querySelector('[data-cal-week]').textContent='星期'+weekCh[solar.getWeek()];
+        box.querySelector('[data-cal-lunar]').textContent='农历'+lunar.getMonthInChinese()+'月'+lunar.getDayInChinese();
+        box.querySelector('[data-cal-gzmd]').textContent=lunar.getMonthInGanZhi()+'月 · '+lunar.getDayInGanZhi()+'日';
+      }catch(e){
+        box.querySelector('[data-cal-solar]').textContent='日期推算失败';
+      }
+    }
+    render();
+  })();
+</script>
