@@ -144,7 +144,7 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
     var ric=window.requestIdleCallback;
     if(typeof ric==='function'){ric(run,{timeout:2000});}else{setTimeout(run,300);}
 
-    /* —— 导出图片（Canvas 2D 原生绘制，完美渲染网页字体） —— */
+    /* —— 导出图片（Canvas 2D，不修改 DOM 以保持布局精确） —— */
     var exportBtn=box.querySelector('[data-export]');
     if(exportBtn){
       exportBtn.addEventListener('click',function(e){
@@ -152,13 +152,10 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
         e.preventDefault();
         doExport();
       });
+
       function doExport(){
-        var hiddenEls=[exportBtn,hint];
-        var prevDisplay=[];
-        hiddenEls.forEach(function(el,i){
-          if(el){prevDisplay[i]=el.style.display;el.style.display='none';}
-        });
         exportBtn.textContent='生成中…';
+        exportBtn.style.pointerEvents='none';
         var fontSteps=[];
         if(document.fonts){
           ['5.5rem "Cormorant Garamond"','1rem "Ma Shan Zheng"','1rem "Noto Serif SC"'].forEach(function(f){
@@ -180,12 +177,11 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
           })
           .catch(function(e){console.error(e);exportBtn.textContent='失败';})
           .finally(function(){
-            hiddenEls.forEach(function(el,i){
-              if(el){el.style.display=prevDisplay[i]||'';}
-            });
             exportBtn.textContent='存图';
+            exportBtn.style.pointerEvents='';
           });
       }
+
       function drawCardToCanvas(){
         var boxRect=box.getBoundingClientRect();
         var W=boxRect.width,H=boxRect.height,dpr=2;
@@ -194,28 +190,49 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
         canvas.height=Math.round(H*dpr);
         var ctx=canvas.getContext('2d');
         ctx.scale(dpr,dpr);
+
         var root=getComputedStyle(document.documentElement);
         function cv(n,f){return root.getPropertyValue(n).trim()||f;}
         var C={paper:cv('--paper','#FBF7EC'),ink:cv('--ink','#2A2520'),accent:cv('--accent','#A23A2E'),muted:cv('--muted','#6B5D4F'),faint:cv('--faint','#9C8D7B'),rule:cv('--rule','#D9CFBE'),seal:cv('--seal','#A23A2E')};
+
+        /* 背景 + 边框（用 rule 色，不用 hover 态的 accent 色） */
         var bs=getComputedStyle(box);
         var radius=parseFloat(bs.borderRadius)||8,bw=parseFloat(bs.borderTopWidth)||1;
         ctx.fillStyle=C.paper;rr(ctx,0,0,W,H,radius);ctx.fill();
         ctx.strokeStyle=C.rule;ctx.lineWidth=bw;rr(ctx,bw/2,bw/2,W-bw,H-bw,Math.max(0,radius-bw/2));ctx.stroke();
+
+        /* 获取元素相对卡片的位置 */
         function rp(el){var r=el.getBoundingClientRect();return{x:r.left-boxRect.left,y:r.top-boxRect.top,w:r.width,h:r.height};}
+
+        /* 构建 canvas 可用的 font 字符串（用 px 而非 rem） */
+        function fontStr(el){
+          var s=getComputedStyle(el);
+          var str='';
+          if(s.fontStyle&&s.fontStyle!=='normal')str+=s.fontStyle+' ';
+          if(s.fontWeight&&s.fontWeight!=='400'&&s.fontWeight!=='normal')str+=s.fontWeight+' ';
+          str+=s.fontSize+' '+s.fontFamily;
+          return str;
+        }
+
+        /* 绘制带字间距的文字 */
         function dt(el,color,align,base,ls){
           var s=getComputedStyle(el),p=rp(el);
-          ctx.font=s.font;ctx.fillStyle=color;ctx.textAlign=align||'left';ctx.textBaseline=base||'top';
+          ctx.font=fontStr(el);ctx.fillStyle=color;ctx.textAlign=align||'left';ctx.textBaseline=base||'top';
           var text=el.textContent;
+          /* 修正 line-height 导致的垂直偏移 */
+          var fs=parseFloat(s.fontSize),lh=parseFloat(s.lineHeight)||fs*1.85;
+          var offsetY=base==='middle'?0:(lh-fs)/2;
           if(ls){
-            var fs=parseFloat(s.fontSize),sp=fs*ls,chars=text.split(''),tw=0;
+            var sp=fs*ls,chars=text.split(''),tw=0;
             chars.forEach(function(c){tw+=ctx.measureText(c).width+sp;});tw-=sp;
             var sx=align==='center'?p.x+(p.w-tw)/2:align==='right'?p.x+p.w-tw:p.x,cx=sx;
-            chars.forEach(function(c){ctx.fillText(c,cx,p.y);cx+=ctx.measureText(c).width+sp;});
-          } else {
+            chars.forEach(function(c){ctx.fillText(c,cx,p.y+offsetY);cx+=ctx.measureText(c).width+sp;});
+          }else{
             var tx=align==='center'?p.x+p.w/2:align==='right'?p.x+p.w:p.x;
-            ctx.fillText(text,tx,p.y);
+            ctx.fillText(text,tx,p.y+offsetY);
           }
         }
+
         /* 标签 + 线 */
         dt(box.querySelector('.dc-label'),C.accent,'left','top',0.3);
         var lp=rp(box.querySelector('.dc-line'));
@@ -224,7 +241,7 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
         dt(box.querySelector('.dc-my'),C.muted,'center','top',0.15);
         /* 日期数字（day-wrap 内居中） */
         var dayEl=box.querySelector('.dc-day'),dwp=rp(box.querySelector('.dc-day-wrap'));
-        ctx.font=getComputedStyle(dayEl).font;ctx.fillStyle=C.ink;ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.font=fontStr(dayEl);ctx.fillStyle=C.ink;ctx.textAlign='center';ctx.textBaseline='middle';
         ctx.fillText(dayEl.textContent,dwp.x+dwp.w/2,dwp.y+dwp.h/2);
         /* 星期 */
         dt(box.querySelector('.dc-week'),C.accent,'center','top',0.2);
@@ -240,22 +257,22 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
         ctx.strokeStyle=C.accent;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(qp.x,qp.y);ctx.lineTo(qp.x,qp.y+qp.h);ctx.stroke();
         var tEl=box.querySelector('.dc-text'),tes=getComputedStyle(tEl),tp=rp(tEl);
         var tlh=parseFloat(tes.lineHeight)||parseFloat(tes.fontSize)*1.85;
-        ctx.font=tes.font;ctx.fillStyle=C.ink;ctx.textAlign='left';ctx.textBaseline='top';
+        ctx.font=fontStr(tEl);ctx.fillStyle=C.ink;ctx.textAlign='left';ctx.textBaseline='top';
         var qText=tEl.textContent,qW=qp.w-parseFloat(qs.paddingLeft)-parseFloat(qs.paddingRight);
         var lines=[],cur='';
         for(var i=0;i<qText.length;i++){var test=cur+qText[i];if(ctx.measureText(test).width>qW&&cur){lines.push(cur);cur=qText[i];}else cur=test;}
         if(cur)lines.push(cur);
         var ty=tp.y;lines.forEach(function(line){ctx.fillText(line,tp.x,ty);ty+=tlh;});
         var fEl=box.querySelector('.dc-from'),fp=rp(fEl);
-        ctx.font=getComputedStyle(fEl).font;ctx.fillStyle=C.accent;ctx.fillText(fEl.textContent,fp.x,fp.y);
+        ctx.font=fontStr(fEl);ctx.fillStyle=C.accent;ctx.fillText(fEl.textContent,fp.x,fp.y);
         /* 底部虚线 */
         var ftp=rp(box.querySelector('.dc-foot'));
         ctx.strokeStyle=C.rule;ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(ftp.x,ftp.y);ctx.lineTo(ftp.x+ftp.w,ftp.y);ctx.stroke();ctx.setLineDash([]);
-        /* 印章 */
+        /* 印章 — 不隐藏任何元素，位置精确 */
         var sEl=box.querySelector('.dc-seal'),sp=rp(sEl),ss=getComputedStyle(sEl),ssz=sp.w;
         ctx.save();ctx.translate(sp.x+ssz/2,sp.y+ssz/2);ctx.rotate(5*Math.PI/180);ctx.globalAlpha=0.82;
         ctx.strokeStyle=C.seal;ctx.lineWidth=2;ctx.strokeRect(-ssz/2+1,-ssz/2+1,ssz-2,ssz-2);
-        ctx.fillStyle=C.seal;ctx.font=ss.font;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(sEl.textContent,0,0);ctx.restore();
+        ctx.fillStyle=C.seal;ctx.font=fontStr(sEl);ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(sEl.textContent,0,0);ctx.restore();
         return canvas;
       }
       function rr(ctx,x,y,w,h,r){
