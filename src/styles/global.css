@@ -162,9 +162,9 @@ img{max-width:100%;display:block}
 .contact-row a{font-family:var(--kai);color:var(--accent);font-size:.95rem;border:1px solid var(--rule2);border-radius:20px;padding:.4rem 1.1rem;transition:.18s}
 .contact-row a:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
 
-/* 关于页双栏 + 一言侧栏 */
+/* 关于页双栏 + 一言/日历侧栏 */
 .about-layout{display:grid;grid-template-columns:minmax(0,var(--read)) 300px;gap:3rem;justify-content:center;align-items:start;padding-top:1rem}
-.about-side{position:sticky;top:90px}
+.about-side{position:sticky;top:90px;display:flex;flex-direction:column;gap:1.5rem}
 
 /* 页脚 */
 .site-foot{border-top:1px solid var(--rule);padding:2.4rem 1.5rem;text-align:center;color:var(--faint);font-family:var(--kai);font-size:.88rem;letter-spacing:.12em}
