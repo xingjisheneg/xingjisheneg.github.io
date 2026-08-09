@@ -165,3 +165,13 @@ export const hitokoto = {
   /** API 失败时的兜底句 */
   fallback: { text: '青灯之下，黄卷之间，为值得重读的字句留一笔朱批。', from: '青灯黄卷' },
 };
+
+/** 日历卡片 — 关于页右侧展示（公历/农历/干支/星期，本地推算，无需联网） */
+export const calendar = {
+  /** 总开关 */
+  enabled: true,
+  /** 顶部标签文字 */
+  label: '日 历',
+  /** 右下角印章文字 */
+  seal: '历',
+};
