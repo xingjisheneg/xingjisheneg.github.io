@@ -1,0 +1,84 @@
+---
+import { hitokoto as cfg } from '../config';
+---
+{cfg.enabled && (
+  <div class="hk-box" data-hitokoto
+       data-cats={cfg.categories.join(',')}
+       data-auto={String(cfg.autoRefresh)}
+       data-click={cfg.clickToRefresh ? '1' : '0'}>
+    <div class="hk-label">题 记<span class="hk-line"></span></div>
+    <div class="hk-quote">
+      <p class="hk-text" data-hk-text>{cfg.fallback.text}</p>
+      <p class="hk-from" data-hk-from>—— {cfg.fallback.from}</p>
+    </div>
+    <div class="hk-foot">
+      <span class="hk-hint" data-hk-hint>{cfg.clickToRefresh ? '点击换一句' : ''}</span>
+      <span class="hk-seal">言</span>
+    </div>
+  </div>
+)}
+<style>
+.hk-box{border:1px solid var(--rule);border-radius:var(--r);background:var(--paper);padding:1.6rem 1.5rem 1.3rem;position:relative;transition:border-color .2s;font-family:var(--serif)}
+.hk-box[data-click="1"]{cursor:pointer}
+.hk-box:hover{border-color:var(--accent)}
+.hk-label{font-family:var(--kai);color:var(--accent);font-size:.8rem;letter-spacing:.3em;display:flex;align-items:center;gap:.6rem;margin-bottom:1.1rem}
+.hk-line{flex:1;height:1px;background:var(--rule)}
+.hk-quote{position:relative;padding-left:1rem;border-left:3px solid var(--accent);min-height:3.2rem}
+.hk-text{font-family:var(--kai);font-size:1.18rem;line-height:1.85;color:var(--ink);letter-spacing:.04em;transition:opacity .25s}
+.hk-from{font-family:var(--latin);font-style:italic;font-size:.85rem;color:var(--accent);margin-top:.7rem;transition:opacity .25s}
+.hk-foot{display:flex;justify-content:space-between;align-items:center;margin-top:1.2rem;padding-top:1rem;border-top:1px dashed var(--rule)}
+.hk-hint{font-family:var(--kai);font-size:.78rem;color:var(--faint);letter-spacing:.12em}
+.hk-seal{width:32px;height:32px;border:2px solid var(--seal);color:var(--seal);display:flex;align-items:center;justify-content:center;font-family:var(--kai);font-size:1.05rem;border-radius:4px;transform:rotate(5deg);opacity:.82}
+.hk-fade{opacity:0}
+</style>
+<script>
+  (function(){
+    const box=document.querySelector('[data-hitokoto]');
+    if(!box)return;
+    const cats=(box.getAttribute('data-cats')||'').split(',').filter(Boolean);
+    const auto=parseInt(box.getAttribute('data-auto')||'0',10)||0;
+    const click=box.getAttribute('data-click')==='1';
+    const te=box.querySelector('[data-hk-text]');
+    const fe=box.querySelector('[data-hk-from]');
+    const hint=box.querySelector('[data-hk-hint]');
+    let loading=false;
+    function apply(d){
+      te.textContent=d.hitokoto||'';
+      let src='';
+      if(d.from_who)src+=d.from_who;
+      if(d.from){src+=src?('《'+d.from+'》'):d.from;}
+      fe.textContent='—— '+(src||'一言');
+    }
+    function pickCat(){return cats.length?cats[Math.floor(Math.random()*cats.length)]:'';}
+    function fade(cb){te.classList.add('hk-fade');fe.classList.add('hk-fade');setTimeout(function(){cb();te.classList.remove('hk-fade');fe.classList.remove('hk-fade');},250);}
+    async function load(){
+      if(loading)return;
+      loading=true;
+      if(hint)hint.textContent='正在获取…';
+      try{
+        const c=pickCat();
+        const url='https://v1.hitokoto.cn/?encode=json&charset=utf-8'+(c?('&c='+c):'');
+        const ctrl=new AbortController();
+        const to=setTimeout(function(){ctrl.abort();},6000);
+        const r=await fetch(url,{signal:ctrl.signal});
+        clearTimeout(to);
+        if(!r.ok)throw new Error('http '+r.status);
+        const d=await r.json();
+        if(!d||!d.hitokoto)throw new Error('bad data');
+        fade(function(){apply(d);});
+        if(hint)hint.textContent=click?'点击换一句':'';
+      }catch(e){
+        if(hint)hint.textContent='连接一言失败，显示默认句';
+      }finally{
+        loading=false;
+      }
+    }
+    function run(){
+      load();
+      if(auto>0)setInterval(load,auto*1000);
+    }
+    if(click){box.addEventListener('click',load);}
+    const ric=window.requestIdleCallback;
+    if(typeof ric==='function'){ric(run,{timeout:2000});}else{setTimeout(run,300);}
+  })();
+</script>
