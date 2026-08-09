@@ -7,18 +7,28 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
        data-auto={String(hkCfg.autoRefresh)}
        data-click={hkCfg.clickToRefresh ? '1' : '0'}>
     <div class="dc-label">{calCfg.label}<span class="dc-line"></span></div>
-    <div class="dc-cal">
-      <div class="dc-gzyear" data-cal-gzyear>丙午年</div>
-      <div class="dc-solar" data-cal-solar>—</div>
+
+    <!-- ▼ 视觉中心：巨大日期数字 -->
+    <div class="dc-hero">
+      <div class="dc-day" data-cal-day>—</div>
+      <div class="dc-my" data-cal-my>—</div>
       <div class="dc-week" data-cal-week>—</div>
-      <div class="dc-rule"></div>
-      <div class="dc-lunar" data-cal-lunar>—</div>
-      <div class="dc-gzmd" data-cal-gzmd>—</div>
     </div>
+
+    <div class="dc-rule"></div>
+
+    <!-- ▼ 辅助信息：农历 + 干支 -->
+    <div class="dc-aux">
+      <div class="dc-lunar" data-cal-lunar>—</div>
+      <div class="dc-gz" data-cal-gz>—</div>
+    </div>
+
+    <!-- ▼ 一言题记 -->
     <div class="dc-quote">
       <p class="dc-text" data-hk-text>{hkCfg.fallback.text}</p>
       <p class="dc-from" data-hk-from>—— {hkCfg.fallback.from}</p>
     </div>
+
     <div class="dc-foot">
       <span class="dc-hint" data-hk-hint>{hkCfg.clickToRefresh ? '点击换句' : ''}</span>
       <span class="dc-seal">{calCfg.seal}</span>
@@ -26,24 +36,33 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
   </div>
 )}
 <style>
-.dc-box{border:1px solid var(--rule);border-radius:var(--r);background:var(--paper);padding:1.6rem 1.5rem 1.3rem;position:relative;font-family:var(--serif);transition:border-color .2s}
+.dc-box{border:1px solid var(--rule);border-radius:var(--r);background:var(--paper);padding:1.5rem 1.5rem 1.2rem;position:relative;font-family:var(--serif);transition:border-color .2s}
 .dc-box[data-click="1"]{cursor:pointer}
 .dc-box:hover{border-color:var(--accent)}
-.dc-label{font-family:var(--kai);color:var(--accent);font-size:.8rem;letter-spacing:.3em;display:flex;align-items:center;gap:.6rem;margin-bottom:1.3rem}
+.dc-label{font-family:var(--kai);color:var(--accent);font-size:.78rem;letter-spacing:.3em;display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem}
 .dc-line{flex:1;height:1px;background:var(--rule)}
-.dc-cal{text-align:center}
-.dc-gzyear{font-family:var(--kai);font-size:1.7rem;color:var(--accent);letter-spacing:.08em;line-height:1.2;margin-bottom:.35rem}
-.dc-solar{font-size:.98rem;color:var(--ink);letter-spacing:.05em;margin-bottom:.2rem}
-.dc-week{font-family:var(--kai);font-size:.85rem;color:var(--muted);letter-spacing:.12em;margin-bottom:.9rem}
-.dc-rule{height:1px;background:var(--rule);margin:.9rem auto;width:55%}
-.dc-lunar{font-family:var(--kai);font-size:1.08rem;color:var(--ink);letter-spacing:.05em;margin-bottom:.35rem}
-.dc-gzmd{font-size:.82rem;color:var(--muted);letter-spacing:.06em}
-.dc-quote{position:relative;margin-top:1.2rem;padding:.9rem 0 0;border-top:1px dashed var(--rule);padding-left:.9rem;border-left:3px solid var(--accent);min-height:3rem}
-.dc-text{font-family:var(--kai);font-size:1.12rem;line-height:1.85;color:var(--ink);letter-spacing:.04em;transition:opacity .25s}
-.dc-from{font-family:var(--latin);font-style:italic;font-size:.82rem;color:var(--accent);margin-top:.5rem;transition:opacity .25s}
-.dc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:1.1rem;padding-top:.9rem;border-top:1px dashed var(--rule)}
-.dc-hint{font-family:var(--kai);font-size:.74rem;color:var(--faint);letter-spacing:.12em}
-.dc-seal{width:32px;height:32px;border:2px solid var(--seal);color:var(--seal);display:flex;align-items:center;justify-content:center;font-family:var(--kai);font-size:1.05rem;border-radius:4px;transform:rotate(5deg);opacity:.82}
+
+/* —— 视觉中心：日期数字 —— */
+.dc-hero{text-align:center;padding:.2rem 0 .6rem}
+.dc-day{font-family:var(--latin);font-size:4.2rem;font-weight:600;color:var(--ink);line-height:1;letter-spacing:-.02em;margin-bottom:.15rem}
+.dc-my{font-family:var(--kai);font-size:.92rem;color:var(--muted);letter-spacing:.15em;margin-bottom:.15rem}
+.dc-week{font-family:var(--kai);font-size:.82rem;color:var(--accent);letter-spacing:.2em}
+
+.dc-rule{height:1px;background:var(--rule);margin:.5rem auto .8rem;width:60%}
+
+/* —— 辅助信息 —— */
+.dc-aux{text-align:center;margin-bottom:1rem}
+.dc-lunar{font-family:var(--kai);font-size:1.02rem;color:var(--ink);letter-spacing:.05em;margin-bottom:.25rem}
+.dc-gz{font-size:.76rem;color:var(--faint);letter-spacing:.08em}
+
+/* —— 一言 —— */
+.dc-quote{position:relative;padding:.85rem .9rem .8rem;border-top:1px dashed var(--rule);border-left:3px solid var(--accent);min-height:3rem}
+.dc-text{font-family:var(--kai);font-size:1.08rem;line-height:1.85;color:var(--ink);letter-spacing:.04em;transition:opacity .25s}
+.dc-from{font-family:var(--latin);font-style:italic;font-size:.8rem;color:var(--accent);margin-top:.45rem;transition:opacity .25s}
+
+.dc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:.9rem;padding-top:.8rem;border-top:1px dashed var(--rule)}
+.dc-hint{font-family:var(--kai);font-size:.72rem;color:var(--faint);letter-spacing:.12em}
+.dc-seal{width:30px;height:30px;border:2px solid var(--seal);color:var(--seal);display:flex;align-items:center;justify-content:center;font-family:var(--kai);font-size:1rem;border-radius:4px;transform:rotate(5deg);opacity:.82}
 .dc-fade{opacity:0}
 </style>
 <script is:inline src="https://cdn.jsdelivr.net/npm/lunar-javascript@1/lunar.js"></script>
@@ -53,19 +72,25 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
     if(!box)return;
 
     /* —— 日历部分 —— */
+    var monthCh=['一','二','三','四','五','六','七','八','九','十','十一','十二'];
     function renderCal(){
       if(typeof Solar==='undefined'){setTimeout(renderCal,200);return;}
       try{
         var weekCh=['日','一','二','三','四','五','六'];
         var solar=Solar.fromDate(new Date());
         var lunar=solar.getLunar();
-        box.querySelector('[data-cal-gzyear]').textContent=lunar.getYearInGanZhi()+'年 · '+lunar.getYearShengXiao();
-        box.querySelector('[data-cal-solar]').textContent=solar.getYear()+'年'+solar.getMonth()+'月'+solar.getDay()+'日';
+        /* 巨大日期数字 */
+        box.querySelector('[data-cal-day]').textContent=solar.getDay();
+        /* 月 · 年 */
+        box.querySelector('[data-cal-my]').textContent=monthCh[solar.getMonth()-1]+'月 · '+solar.getYear();
+        /* 星期 */
         box.querySelector('[data-cal-week]').textContent='星期'+weekCh[solar.getWeek()];
+        /* 农历 */
         box.querySelector('[data-cal-lunar]').textContent='农历'+lunar.getMonthInChinese()+'月'+lunar.getDayInChinese();
-        box.querySelector('[data-cal-gzmd]').textContent=lunar.getMonthInGanZhi()+'月 · '+lunar.getDayInGanZhi()+'日';
+        /* 干支（紧凑一行） */
+        box.querySelector('[data-cal-gz]').textContent=lunar.getYearInGanZhi()+'年·'+lunar.getYearShengXiao()+'　'+lunar.getMonthInGanZhi()+'月·'+lunar.getDayInGanZhi()+'日';
       }catch(e){
-        box.querySelector('[data-cal-solar]').textContent='日期推算失败';
+        box.querySelector('[data-cal-day]').textContent='?';
       }
     }
     renderCal();
