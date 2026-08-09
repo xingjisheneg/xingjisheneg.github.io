@@ -31,7 +31,10 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
 
     <div class="dc-foot">
       <span class="dc-hint" data-hk-hint>{hkCfg.clickToRefresh ? '点击换句' : ''}</span>
-      <span class="dc-seal">{calCfg.seal}</span>
+      <div class="dc-actions">
+        <button class="dc-export" data-export title="保存为图片">存图</button>
+        <span class="dc-seal">{calCfg.seal}</span>
+      </div>
     </div>
   </div>
 )}
@@ -62,10 +65,14 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
 
 .dc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:.9rem;padding-top:.8rem;border-top:1px dashed var(--rule)}
 .dc-hint{font-family:var(--kai);font-size:.72rem;color:var(--faint);letter-spacing:.12em}
+.dc-actions{display:flex;align-items:center;gap:.7rem}
+.dc-export{font-family:var(--kai);font-size:.72rem;color:var(--faint);letter-spacing:.12em;background:none;border:1px solid var(--rule);border-radius:3px;padding:.2rem .55rem;cursor:pointer;transition:.18s;line-height:1.4}
+.dc-export:hover{color:var(--accent);border-color:var(--accent)}
 .dc-seal{width:30px;height:30px;border:2px solid var(--seal);color:var(--seal);display:flex;align-items:center;justify-content:center;font-family:var(--kai);font-size:1rem;border-radius:4px;transform:rotate(5deg);opacity:.82}
 .dc-fade{opacity:0}
 </style>
 <script is:inline src="https://cdn.jsdelivr.net/npm/lunar-javascript@1/lunar.js"></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
   (function(){
     var box=document.querySelector('[data-daily]');
@@ -79,15 +86,10 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
         var weekCh=['日','一','二','三','四','五','六'];
         var solar=Solar.fromDate(new Date());
         var lunar=solar.getLunar();
-        /* 巨大日期数字 */
         box.querySelector('[data-cal-day]').textContent=solar.getDay();
-        /* 月 · 年 */
         box.querySelector('[data-cal-my]').textContent=monthCh[solar.getMonth()-1]+'月 · '+solar.getYear();
-        /* 星期 */
         box.querySelector('[data-cal-week]').textContent='星期'+weekCh[solar.getWeek()];
-        /* 农历 */
         box.querySelector('[data-cal-lunar]').textContent='农历'+lunar.getMonthInChinese()+'月'+lunar.getDayInChinese();
-        /* 干支（紧凑一行） */
         box.querySelector('[data-cal-gz]').textContent=lunar.getYearInGanZhi()+'年·'+lunar.getYearShengXiao()+'　'+lunar.getMonthInGanZhi()+'月·'+lunar.getDayInGanZhi()+'日';
       }catch(e){
         box.querySelector('[data-cal-day]').textContent='?';
@@ -141,5 +143,47 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
     if(click){box.addEventListener('click',load);}
     var ric=window.requestIdleCallback;
     if(typeof ric==='function'){ric(run,{timeout:2000});}else{setTimeout(run,300);}
+
+    /* —— 导出图片 —— */
+    var exportBtn=box.querySelector('[data-export]');
+    if(exportBtn){
+      exportBtn.addEventListener('click',function(e){
+        e.stopPropagation();
+        e.preventDefault();
+        if(typeof html2canvas==='undefined'){
+          exportBtn.textContent='库加载中';
+          setTimeout(function(){exportBtn.textContent='存图';},1500);
+          return;
+        }
+        /* 暂存并隐藏交互元素 */
+        var hiddenEls=[exportBtn,hint];
+        var prevDisplay=[];
+        hiddenEls.forEach(function(el,i){
+          if(el){prevDisplay[i]=el.style.display;el.style.display='none';}
+        });
+        exportBtn.textContent='生成中…';
+        var bg=getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()||'#FBF7EC';
+        html2canvas(box,{
+          backgroundColor:bg,
+          scale:2,
+          useCORS:true,
+          logging:false
+        }).then(function(canvas){
+          var now=new Date();
+          var fn='daily-'+now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+'.png';
+          var a=document.createElement('a');
+          a.href=canvas.toDataURL('image/png');
+          a.download=fn;
+          a.click();
+        }).catch(function(){
+          exportBtn.textContent='失败';
+        }).finally(function(){
+          hiddenEls.forEach(function(el,i){
+            if(el){el.style.display=prevDisplay[i]||'';}
+          });
+          exportBtn.textContent='存图';
+        });
+      });
+    }
   })();
 </script>
