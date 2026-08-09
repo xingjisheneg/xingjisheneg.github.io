@@ -167,40 +167,41 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
         });
         exportBtn.textContent='生成中…';
         var bg=getComputedStyle(document.documentElement).getPropertyValue('--paper').trim()||'#FBF7EC';
-        /* 等待字体加载完成后再截图 */
-        var fontReady=Promise.resolve();
-        if(document.fonts&&document.fonts.ready){fontReady=document.fonts.ready;}
-        fontReady.then(function(){
-          return html2canvas(box,{
-            backgroundColor:bg,
-            scale:2,
-            useCORS:true,
-            logging:false,
-            onclone:function(doc){
-              /* 导出时：换用系统字体 + 加大间距，彻底解决 html2canvas 字体 metrics 差异 */
-              var dd=doc.querySelector('.dc-day');
-              if(dd){dd.style.fontFamily='Georgia, serif';}
-              var dw=doc.querySelector('.dc-day-wrap');
-              if(dw){dw.style.height='130px';dw.style.marginBottom='40px';}
-              var dm=doc.querySelector('.dc-my');
-              if(dm){dm.style.marginBottom='12px';}
-            }
+
+        /* —— 原图直出：确保关键字体加载完毕后，不做任何样式修改直接截图 —— */
+        var steps=[];
+        if(document.fonts){
+          /* 显式加载三款关键字体，避免 html2canvas 渲染时回退到 fallback */
+          ['5.5rem "Cormorant Garamond"','1rem "Ma Shan Zheng"','1rem "Noto Serif SC"'].forEach(function(f){
+            steps.push(document.fonts.load(f).catch(function(){}));
           });
-        }).then(function(canvas){
-          var now=new Date();
-          var fn='daily-'+now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+'.png';
-          var a=document.createElement('a');
-          a.href=canvas.toDataURL('image/png');
-          a.download=fn;
-          a.click();
-        }).catch(function(){
-          exportBtn.textContent='失败';
-        }).finally(function(){
-          hiddenEls.forEach(function(el,i){
-            if(el){el.style.display=prevDisplay[i]||'';}
+        }
+        Promise.all(steps)
+          .then(function(){return document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();})
+          .then(function(){return new Promise(function(r){setTimeout(r,200);});})/* 渲染缓冲 */
+          .then(function(){
+            return html2canvas(box,{
+              backgroundColor:bg,
+              scale:2,
+              useCORS:true,
+              logging:false
+            });
+          })
+          .then(function(canvas){
+            var now=new Date();
+            var fn='daily-'+now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+'.png';
+            var a=document.createElement('a');
+            a.href=canvas.toDataURL('image/png');
+            a.download=fn;
+            a.click();
+          })
+          .catch(function(){exportBtn.textContent='失败';})
+          .finally(function(){
+            hiddenEls.forEach(function(el,i){
+              if(el){el.style.display=prevDisplay[i]||'';}
+            });
+            exportBtn.textContent='存图';
           });
-          exportBtn.textContent='存图';
-        });
       }
     }
   })();
