@@ -177,9 +177,11 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
             useCORS:true,
             logging:false,
             onclone:function(doc){
-              /* 导出时加大间距，补偿 html2canvas 字体 metrics 差异 */
+              /* 导出时：换用系统字体 + 加大间距，彻底解决 html2canvas 字体 metrics 差异 */
+              var dd=doc.querySelector('.dc-day');
+              if(dd){dd.style.fontFamily='Georgia, serif';}
               var dw=doc.querySelector('.dc-day-wrap');
-              if(dw){dw.style.height='110px';dw.style.marginBottom='28px';}
+              if(dw){dw.style.height='130px';dw.style.marginBottom='40px';}
               var dm=doc.querySelector('.dc-my');
               if(dm){dm.style.marginBottom='12px';}
             }
