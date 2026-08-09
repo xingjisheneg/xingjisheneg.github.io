@@ -1,7 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import CalendarCard from '../components/CalendarCard.astro';
-import Hitokoto from '../components/Hitokoto.astro';
+import DailyCard from '../components/DailyCard.astro';
 import { about, site } from '../config';
 
 // Person JSON-LD
@@ -42,8 +41,7 @@ const personJsonLd = {
         </div>
       </div>
       <aside class="about-side">
-        <CalendarCard />
-        <Hitokoto />
+        <DailyCard />
       </aside>
     </div>
   </div>
