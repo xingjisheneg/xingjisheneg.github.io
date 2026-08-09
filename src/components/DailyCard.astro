@@ -90,7 +90,7 @@ import { calendar as calCfg, hitokoto as hkCfg } from '../config';
         box.querySelector('[data-cal-my]').textContent=monthCh[solar.getMonth()-1]+'月 · '+solar.getYear();
         box.querySelector('[data-cal-week]').textContent='星期'+weekCh[solar.getWeek()];
         box.querySelector('[data-cal-lunar]').textContent='农历'+lunar.getMonthInChinese()+'月'+lunar.getDayInChinese();
-        box.querySelector('[data-cal-gz]').textContent=lunar.getYearInGanZhi()+'年·'+lunar.getYearShengXiao()+'　'+lunar.getMonthInGanZhi()+'月·'+lunar.getDayInGanZhi()+'日';
+        box.querySelector('[data-cal-gz]').textContent=lunar.getYearInGanZhi()+'年　'+lunar.getMonthInGanZhi()+'月 '+lunar.getDayInGanZhi()+'日';
       }catch(e){
         box.querySelector('[data-cal-day]').textContent='?';
       }
