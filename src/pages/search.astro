@@ -1,92 +1,228 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { site } from '../config';
 ---
-<BaseLayout title="搜索 · 青灯黄卷">
+<BaseLayout title={`搜索 · ${site.name}`} active="search">
   <div class="container">
-    <div class="search-wrap">
-      <div class="search-box">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-        <input id="q" type="text" placeholder="搜索文章、作品…" autofocus />
-      </div>
-      <div class="search-meta" id="meta"></div>
-      <div id="results"></div>
+    <div class="search-wrap" id="searchPage" data-list-page data-list-top tabindex="-1">
+      <h1 class="search-heading">搜索</h1>
+      <p class="search-help" id="searchHelp">检索札记、随笔与作品的标题、摘要、标签和正文，按完整关键词匹配，不区分大小写。</p>
+      <form id="searchForm" action="/search/" method="get" role="search">
+        <label for="q">关键词</label>
+        <div class="search-controls">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            <input id="q" name="q" type="search" placeholder="搜索文章、作品…" aria-describedby="searchHelp" />
+          </div>
+          <button type="submit" class="search-action search-submit">搜索</button>
+          <button type="reset" class="search-action">清空</button>
+        </div>
+      </form>
+      <section id="searchOutput" data-deferred-results data-state="blank" aria-label="搜索结果">
+        <p class="search-meta" id="meta" role="status" aria-live="polite" aria-atomic="true">输入关键词开始搜索。</p>
+        <div id="results" aria-busy="false"></div>
+        <button type="button" class="search-action" id="retrySearch" hidden>重试搜索</button>
+      </section>
+      <noscript>
+        <p class="search-noscript">全文搜索需要启用 JavaScript 才能读取本站索引。你仍可直接浏览<a href="/notes/">札记</a>、<a href="/essays/">随笔</a>与<a href="/works/">作品</a>。</p>
+      </noscript>
     </div>
   </div>
   <script is:inline>
-    (function(){
+    document.addEventListener('DOMContentLoaded', () => {
+      const form = document.getElementById('searchForm');
       const input = document.getElementById('q');
+      const output = document.getElementById('searchOutput');
       const results = document.getElementById('results');
       const meta = document.getElementById('meta');
-      let data = null;
+      const retry = document.getElementById('retrySearch');
+      let indexPromise = null;
+      let generation = 0;
+      let currentQuery = '';
 
-      fetch('/search.json').then(r => r.json()).then(d => { data = d; doSearch(''); }).catch(err => { meta.textContent = '搜索索引加载失败，请刷新重试'; });
-
-      function escapeRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
-      function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-      function highlight(text, q) {
-        if(!q) return text;
-        const re = new RegExp('(' + escapeRe(q) + ')', 'gi');
-        return text.replace(re, '<b>$1</b>');
+      function loadIndex() {
+        if (!indexPromise) {
+          const controller = new AbortController();
+          const timeout = window.setTimeout(() => controller.abort(), 8000);
+          indexPromise = fetch('/search.json', { signal: controller.signal, cache: 'no-store' })
+            .then(response => {
+              if (!response.ok) throw new Error('Search index unavailable');
+              return response.json();
+            })
+            .catch(error => {
+              indexPromise = null;
+              throw error;
+            })
+            .finally(() => window.clearTimeout(timeout));
+        }
+        return indexPromise;
       }
 
-      function doSearch(q) {
-        if(!data) return;
-        if(!q) {
-          meta.textContent = `共 ${data.length} 篇内容，输入关键词开始搜索`;
-          results.innerHTML = '';
-          return;
-        }
-        const ql = q.toLowerCase();
-        const matched = data.filter(it =>
-          it.title.toLowerCase().includes(ql) ||
-          it.excerpt.toLowerCase().includes(ql) ||
-          it.src.toLowerCase().includes(ql) ||
-          (it.tags || []).some(t => t.toLowerCase().includes(ql))
-        );
-        meta.textContent = `找到 ${matched.length} 条结果`;
-        if(matched.length === 0) {
-          results.innerHTML = '<div class="search-empty">青灯之下，未寻得此卷。<br>换个词试试？</div>';
-          return;
-        }
-        results.innerHTML = matched.map(it => {
-          const dateStr = it.date ? it.date.slice(5).replace('-', '/') : '';
-          const safeTitle = escapeHtml(it.title);
-          const safeExcerpt = escapeHtml(it.excerpt);
-          const safeUrl = escapeHtml(it.url);
-          return `<a class="sr-item" href="${safeUrl}">
-            <div class="st">${highlight(safeTitle, q)}${it.sectionLabel ? '<span class="sec">' + escapeHtml(it.sectionLabel) + '</span>' : ''}</div>
-            ${dateStr ? '<div class="sd">' + dateStr + '</div>' : ''}
-            <div class="ss">${highlight(safeExcerpt, q)}</div>
-            ${it.tags && it.tags.length ? '<div class="stags">' + it.tags.map(t => '<span class="stag">'+highlight(escapeHtml(t),q)+'</span>').join('') + '</div>' : ''}
-          </a>`;
-        }).join('');
+      function element(tag, className, text = '') {
+        const node = document.createElement(tag);
+        node.className = className;
+        node.textContent = text;
+        return node;
       }
 
-      let timer;
-      input.addEventListener('input', e => {
-        clearTimeout(timer);
-        timer = setTimeout(() => doSearch(e.target.value.trim()), 150);
+      function highlight(node, text, needle) {
+        const lower = text.toLowerCase();
+        let offset = 0;
+        let position = lower.indexOf(needle);
+        while (position !== -1) {
+          node.append(document.createTextNode(text.slice(offset, position)));
+          node.append(element('mark', '', text.slice(position, position + needle.length)));
+          offset = position + needle.length;
+          position = lower.indexOf(needle, offset);
+        }
+        node.append(document.createTextNode(text.slice(offset)));
+      }
+
+      function snippet(item, needle) {
+        const fromBody = !item.excerpt.toLowerCase().includes(needle) && item.body.toLowerCase().includes(needle);
+        const text = fromBody ? item.body : item.excerpt;
+        const position = text.toLowerCase().indexOf(needle);
+        const start = Math.max(0, position - 50);
+        const end = Math.min(text.length, Math.max(start + 180, position + needle.length));
+        return (fromBody ? '正文：' : '') + (start ? '…' : '') +
+          text.slice(start, end).replace(/\s+/g, ' ').trim() + (end < text.length ? '…' : '');
+      }
+
+      function resultItem(item, needle) {
+        const article = element('article', 'sr-item');
+        const heading = element('h2', 'st');
+        const link = element('a', '');
+        link.href = item.url;
+        link.dataset.detailLink = '';
+        highlight(link, item.title, needle);
+        heading.append(link);
+        const details = element('div', 'sr-meta');
+        details.append(element('span', 'sec', item.sectionLabel));
+        if (item.demo) details.append(element('span', 'demo', '演示内容'));
+        if (item.date) {
+          const date = element('time', 'sd', item.date);
+          date.dateTime = item.date;
+          details.append(date);
+        }
+        if (item.src) details.append(element('span', 'sr-source', item.src));
+        const summary = element('p', 'ss');
+        highlight(summary, snippet(item, needle), needle);
+        article.append(heading, details, summary);
+        if (item.tags.length) {
+          const tags = element('div', 'stags');
+          item.tags.forEach(tag => {
+            const tagLink = element('a', 'stag');
+            tagLink.href = '/tags/?' + new URLSearchParams({ tag, section: 'all', page: '1' });
+            highlight(tagLink, tag, needle);
+            tags.append(tagLink);
+          });
+          article.append(tags);
+        }
+        return article;
+      }
+
+      function setState(state, message) {
+        output.dataset.state = state;
+        results.setAttribute('aria-busy', String(state === 'loading'));
+        meta.textContent = message;
+        retry.hidden = state !== 'error';
+        if (state !== 'loading') window.dispatchEvent(new Event('qd:content-ready'));
+      }
+
+      async function render(query) {
+        const requestGeneration = ++generation;
+        currentQuery = query;
+        input.value = query;
+        results.replaceChildren();
+        if (!query) {
+          setState('blank', '输入关键词开始搜索。');
+          return;
+        }
+        setState('loading', `正在检索“${query}”…`);
+        try {
+          const index = await loadIndex();
+          if (requestGeneration !== generation) return;
+          const needle = query.toLowerCase();
+          const matches = index.filter(item =>
+            [item.title, item.excerpt, item.src, item.body, ...item.tags]
+              .some(text => text.toLowerCase().includes(needle))
+          );
+          if (!matches.length) {
+            results.append(element('p', 'search-empty', '青灯之下，未寻得此卷。换个词试试？'));
+            setState('empty', `“${query}”：找到 0 条结果。`);
+            return;
+          }
+          const fragment = document.createDocumentFragment();
+          matches.forEach(item => fragment.append(resultItem(item, needle)));
+          results.append(fragment);
+          setState('success', `“${query}”：找到 ${matches.length} 条结果。`);
+        } catch {
+          if (requestGeneration !== generation) return;
+          indexPromise = null;
+          results.replaceChildren(element('p', 'search-empty', '搜索索引加载失败或等待超时，请检查网络后重试。'));
+          setState('error', `暂时无法搜索“${query}”。`);
+        }
+      }
+
+      function queryFromURL() {
+        return (new URLSearchParams(window.location.search).get('q') || '').trim();
+      }
+
+      function changeQuery(query) {
+        const url = new URL('/search/', window.location.origin);
+        if (query) url.searchParams.set('q', query);
+        window.dispatchEvent(new Event('qd:before-change'));
+        if (url.href !== window.location.href) history.pushState({}, '', url);
+        render(query);
+      }
+
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        changeQuery(input.value.trim());
       });
-    })();
+      form.addEventListener('reset', event => {
+        event.preventDefault();
+        changeQuery('');
+        input.focus();
+      });
+      retry.addEventListener('click', () => render(currentQuery));
+      window.addEventListener('popstate', () => render(queryFromURL()));
+      render(queryFromURL());
+    }, { once: true });
   </script>
   <style>
     .search-wrap{max-width:var(--read);margin:0 auto;padding-top:.5rem}
-    .search-box{display:flex;align-items:center;gap:.7rem;border:1px solid var(--rule2);border-radius:var(--r);padding:.8rem 1.1rem;background:var(--paper);transition:.2s}
+    .search-heading{font-family:var(--kai);font-size:2.2rem;font-weight:400;letter-spacing:.08em}
+    .search-help{color:var(--muted);font-size:.88rem;margin:.5rem 0 1.4rem}
+    #searchForm label{display:block;font-size:.9rem;margin-bottom:.4rem}
+    .search-controls{display:flex;flex-wrap:wrap;gap:.6rem}
+    .search-box{flex:1 1 16rem;min-width:0;display:flex;align-items:center;gap:.7rem;border:1px solid var(--rule2);border-radius:var(--r);padding:.7rem 1rem;background:var(--paper);transition:.2s}
     .search-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 12%,transparent)}
     .search-box svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:1.6;flex:none}
-    .search-box input{flex:1;border:none;background:none;color:var(--ink);font-family:var(--serif);font-size:1.05rem;outline:none}
+    .search-box input{width:100%;min-width:0;border:none;background:none;color:var(--ink);font-family:var(--serif);font-size:1.05rem;outline:none}
     .search-box input::placeholder{color:var(--faint)}
-    .search-meta{font-family:var(--latin);font-size:.84rem;color:var(--faint);font-style:italic;margin:1.2rem 0 .4rem;padding:0 .2rem}
-    .sr-item{display:block;padding:1rem 1.1rem;border-bottom:1px solid var(--rule);transition:.15s;border-radius:var(--r)}
-    .sr-item:hover{background:var(--bg2)}
-    .sr-item .st{font-size:1rem;font-weight:600;color:var(--ink)}
-    .sr-item .st .sec{font-family:var(--kai);font-size:.78rem;color:var(--accent);font-weight:400;margin-left:.5rem}
-    .sr-item .sd{font-family:var(--latin);font-size:.78rem;color:var(--faint);font-style:italic;margin-top:.2rem}
-    .sr-item .ss{margin-top:.3rem;font-size:.88rem;color:var(--muted);line-height:1.7}
-    .sr-item .ss b{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);font-weight:500;padding:0 .15em;border-radius:2px}
-    .sr-item .st b{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);font-weight:600;padding:0 .15em;border-radius:2px}
-    .stags{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem}
-    .stag{font-size:.72rem;color:var(--accent2);border:1px solid var(--rule2);border-radius:12px;padding:.08rem .55rem}
-    .search-empty{text-align:center;padding:3rem 1rem;color:var(--faint);font-family:var(--kai);font-size:1.05rem;line-height:2}
+    .search-action{min-height:44px;padding:.6rem .9rem;border:1px solid var(--rule2);border-radius:var(--r);background:var(--paper);color:var(--ink);font-family:var(--serif);font-size:.88rem;cursor:pointer}
+    .search-action:hover{border-color:var(--accent)}
+    .search-submit{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+    .search-action:focus-visible,#searchPage :global(a:focus-visible){outline:2px solid var(--accent);outline-offset:3px}
+    .search-meta{font-size:.84rem;color:var(--muted);margin:1.2rem 0 .4rem;padding:0 .2rem;overflow-wrap:anywhere}
+    #searchPage :global(.sr-item){padding:1rem 1.1rem;border-bottom:1px solid var(--rule);transition:.15s;border-radius:var(--r);overflow-wrap:anywhere}
+    #searchPage :global(.sr-item:hover){background:var(--bg2)}
+    #searchPage :global(.st){font-size:1rem;font-weight:600}
+    #searchPage :global(.st a){color:var(--ink)}
+    #searchPage :global(.st a:hover){color:var(--accent);text-decoration:underline}
+    #searchPage :global(.sr-meta){display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin-top:.25rem}
+    #searchPage :global(.sec){font-family:var(--kai);font-size:.8rem;color:var(--accent)}
+    #searchPage :global(.demo){font-size:.72rem;color:var(--accent);border:1px solid var(--rule2);border-radius:var(--r);padding:0 .4rem}
+    #searchPage :global(.sd){font-family:var(--latin);font-size:.82rem;color:var(--muted);font-style:italic}
+    #searchPage :global(.sr-source){font-size:.78rem;color:var(--muted)}
+    #searchPage :global(.ss){margin-top:.3rem;font-size:.88rem;color:var(--muted);line-height:1.7}
+    #searchPage :global(mark){background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent);font-weight:inherit;border-radius:2px}
+    #searchPage :global(.stags){display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem}
+    #searchPage :global(.stag){font-size:.74rem;color:var(--accent2);border:1px solid var(--rule2);border-radius:12px;padding:.08rem .55rem}
+    #searchPage :global(.stag:hover){border-color:var(--accent2);background:var(--paper)}
+    #searchPage :global(.search-empty){text-align:center;padding:2.5rem 1rem;color:var(--muted);font-family:var(--kai);font-size:1.05rem;line-height:2}
+    .search-noscript{margin-top:1.5rem;color:var(--muted);font-size:.9rem}
+    .search-noscript a{text-decoration:underline}
   </style>
 </BaseLayout>

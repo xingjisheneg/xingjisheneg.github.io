@@ -1,114 +1,254 @@
 ---
+import type { MarkdownHeading } from 'astro';
 import BaseLayout from './BaseLayout.astro';
 import { site } from '../config';
+import { displayDescription, displayTitle, entrySummary, entryURL, tagURL, type Entry, type Section } from '../content-utils';
 
-const { item, section, sectionLabel, prev, next } = Astro.props;
-const headings = item.body.split('\n').filter(l => l.startsWith('## ')).map(l => l.replace(/^##\s+/, ''));
-const day = item.data.date ? item.data.date.slice(8) : '';
-const month = item.data.date ? item.data.date.slice(5,7) + '月' : '';
-const description = item.data.excerpt || site.description;
-const articleURL = new URL(`/${section}/${item.slug}/`, Astro.site).href;
+interface Props {
+  item: Entry;
+  section: Section;
+  sectionLabel: string;
+  headings: MarkdownHeading[];
+  prev?: Entry | null;
+  next?: Entry | null;
+}
 
-// 根据内容类型选择 JSON-LD schema
-// 札记/随笔 → BlogPosting，作品 → CreativeWork
-const isWork = section === 'works';
-const articleJsonLd = isWork ? {
-  "@context": "https://schema.org",
-  "@type": "CreativeWork",
-  "name": item.data.title,
-  "description": item.data.desc || description,
-  "url": articleURL,
-  "author": {
-    "@type": "Person",
-    "name": site.author,
-  },
-  "publisher": {
-    "@type": "Person",
-    "name": site.author,
-  },
-} : {
-  "@context": "https://schema.org",
-  "@type": "BlogPosting",
-  "headline": item.data.title,
-  "description": description,
-  "url": articleURL,
-  "author": {
-    "@type": "Person",
-    "name": site.author,
-  },
-  "publisher": {
-    "@type": "Person",
-    "name": site.author,
-  },
-  "mainEntityOfPage": {
-    "@type": "WebPage",
-    "@id": articleURL,
-  },
-  ...(item.data.date ? { "datePublished": item.data.date, "dateModified": item.data.date } : {}),
-  ...(item.data.tags?.length ? { "keywords": item.data.tags.join(', ') } : {}),
-  ...(item.data.src ? { "about": item.data.src } : {}),
+const { item, section, sectionLabel, headings, prev = null, next = null } = Astro.props;
+const tocHeadings = headings.filter(heading => heading.depth === 2 || heading.depth === 3);
+const { date, updated, tags, demo } = item.data;
+const read = item.collection === 'works' ? undefined : item.data.read;
+const source = item.collection === 'notes' ? item.data.src : undefined;
+const summary = entrySummary(item);
+const title = displayTitle(item.data.title, demo);
+const description = displayDescription(summary, demo);
+const articleURL = new URL(entryURL(item), Astro.site || `https://${site.domain}/`).href;
+const isWork = item.collection === 'works';
+const articleJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': isWork ? 'CreativeWork' : 'BlogPosting',
+  ...(isWork ? { name: title } : { headline: title }),
+  description,
+  url: articleURL,
+  mainEntityOfPage: { '@type': 'WebPage', '@id': articleURL },
+  ...(!site.authorDemo && !demo ? {
+    author: { '@type': 'Person', name: site.author },
+    publisher: { '@type': 'Person', name: site.author },
+  } : {}),
+  ...(date ? { datePublished: date } : {}),
+  ...(updated ? { dateModified: updated } : {}),
+  ...(tags.length ? { keywords: tags.join(', ') } : {}),
+  ...(source ? { about: source } : {}),
 };
 ---
-<BaseLayout title={`${item.data.title} · ${site.name}`} description={description} active={section}>
-  <script type="application/ld+json" slot="ld-json" set:html={JSON.stringify(articleJsonLd)} />
-  <div class="progress-bar"><i id="progFill"></i></div>
+<BaseLayout title={`${title} · ${site.name}`} description={description} active={section} demo={demo}>
+  <script type="application/ld+json" slot="ld-json" set:html={JSON.stringify(articleJsonLd).replace(/</g, '\\u003c')} />
+  <div class="progress-bar" aria-hidden="true"><i id="progFill"></i></div>
   <div class="container">
-    <div class="article-layout">
-      <nav class="toc" id="articleToc">
-        <div class="tt">目　录</div>
-        {headings.map((h, i) => <a href={`#h${i}`} data-t={`h${i}`}>{h}</a>)}
-      </nav>
+    <div class:list={['article-layout', { 'without-toc': !tocHeadings.length }]} data-detail-page>
+      {tocHeadings.length > 0 && (
+        <nav class="toc toc-desktop" id="articleToc" aria-label="本文目录" data-article-toc>
+          <div class="tt">本文目录</div>
+          <ol>
+            {tocHeadings.map(heading => (
+              <li>
+                <a href={`#${encodeURIComponent(heading.slug)}`} data-heading-id={heading.slug} class:list={{ 'toc-subheading': heading.depth === 3 }}>{heading.text}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
       <div class="article-col">
-        <div class="article-head">
-          <div class="crumb">{sectionLabel} / {item.data.date}</div>
+        <a class="article-return" data-return-list href={`/${section}/`}>返回{sectionLabel}列表</a>
+        <header class="article-head">
+          <div class="crumb">{sectionLabel}</div>
           <h1>{item.data.title}</h1>
-          <div class="by">
-            {item.data.date && <>{item.data.date} · </>}
-            {item.data.read && <>约 {item.data.read}</>}
-            {item.data.src && <span class="src">· {item.data.src}</span>}
-          </div>
-          <div class="atags">{item.data.tags.map(t => <span class="tag">{t}</span>)}</div>
-        </div>
+          {demo && (
+            <div class="demo-notice">
+              <strong class="demo-label">演示内容</strong>
+              <p>本文用于站点展示，不代表已核实的个人经历或项目成果。</p>
+            </div>
+          )}
+          <p class="article-summary">{summary}</p>
+          {(date || read || source) && (
+            <div class="by">
+              {date && <span>发布于 <time datetime={date}>{date}</time></span>}
+              {read && <span>约 {read}</span>}
+              {source && <span class="src">来源：{source}</span>}
+            </div>
+          )}
+          {tags.length > 0 && (
+            <div class="atags">
+              {tags.map(tag => <a class="tag" href={tagURL(tag)} rel="tag">{tag}</a>)}
+            </div>
+          )}
+        </header>
+        <slot name="details" />
+        {tocHeadings.length > 0 && (
+          <details class="toc toc-mobile" id="articleTocMobile" data-article-toc>
+            <summary>本文目录</summary>
+            <nav aria-label="本文目录">
+              <ol>
+                {tocHeadings.map(heading => (
+                  <li>
+                    <a href={`#${encodeURIComponent(heading.slug)}`} data-heading-id={heading.slug} class:list={{ 'toc-subheading': heading.depth === 3 }}>{heading.text}</a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+          </details>
+        )}
         <article class="prose" id="articleBody">
           <slot />
         </article>
-        <div class="article-foot">
-          <div class="pager">
-            {prev && <a href={`/${section}/${prev.slug}/`}>← {prev.data.title}</a>}
-            {next && <a href={`/${section}/${next.slug}/`}>{next.data.title} →</a>}
-          </div>
-          <div class="readinfo">
-            {item.data.date && <>最后修订 {item.data.date}</>}
-            {item.data.date && item.data.read && <> · </>}
-            {item.data.read && <>约 {item.data.read}</>}
-          </div>
-        </div>
+        {(prev || next || updated || read) && (
+          <footer class="article-foot">
+            {(prev || next) && (
+              <nav class="pager" aria-label="上下篇">
+                {prev && (
+                  <a href={entryURL(prev)} rel="prev" data-detail-link>
+                    <span class="pager-label">上一篇</span>
+                    <span>← {displayTitle(prev.data.title, prev.data.demo)}</span>
+                  </a>
+                )}
+                {next && (
+                  <a class="pager-next" href={entryURL(next)} rel="next" data-detail-link>
+                    <span class="pager-label">下一篇</span>
+                    <span>{displayTitle(next.data.title, next.data.demo)} →</span>
+                  </a>
+                )}
+              </nav>
+            )}
+            {(updated || read) && (
+              <div class="readinfo">
+                {updated && <span>最后修订 <time datetime={updated}>{updated}</time></span>}
+                {updated && read && <span aria-hidden="true"> · </span>}
+                {read && <span>约 {read}</span>}
+              </div>
+            )}
+          </footer>
+        )}
       </div>
-      <div></div>
+      {tocHeadings.length > 0 && <div class="article-spacer" aria-hidden="true"></div>}
     </div>
   </div>
 </BaseLayout>
 
-<script is:inline>
-  (function(){
-    const fill=document.getElementById('progFill');
-    const links=[...document.querySelectorAll('#articleToc a')];
-    const heads=links.map(l=>document.getElementById(l.getAttribute('data-t'))).filter(Boolean);
-    // assign IDs to h2
-    document.querySelectorAll('#articleBody h2').forEach((h,i)=>{h.id='h'+i;});
-    function onScroll(){
-      const art=document.getElementById('articleBody');
-      if(!art)return;
-      const r=art.getBoundingClientRect();
-      const vh=window.innerHeight;
-      const ratio=Math.max(0,Math.min(1,(vh-r.top)/(r.height||1)));
-      if(fill)fill.style.width=(ratio*100).toFixed(1)+'%';
-      let active=heads[0]?heads[0].id:null;
-      const line=vh*0.4;
-      heads.forEach(h=>{if(h.getBoundingClientRect().top<=line)active=h.id;});
-      links.forEach(a=>a.classList.toggle('active',a.getAttribute('data-t')===active));
+<script>
+  const article = document.getElementById('articleBody');
+  const fill = document.getElementById('progFill');
+  const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-article-toc] a[data-heading-id]'));
+
+  if (article) {
+    const headingIds = new Set(links.map(link => link.dataset.headingId));
+    const headings = Array.from(article.querySelectorAll<HTMLElement>('h2[id], h3[id]'))
+      .filter(heading => headingIds.has(heading.id));
+    headings.forEach(heading => {
+      if (!heading.hasAttribute('tabindex')) heading.tabIndex = -1;
+    });
+
+    function updateReadingState() {
+      const bounds = article!.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (window.innerHeight - bounds.top) / (bounds.height || 1)));
+      if (fill) fill.style.width = `${(ratio * 100).toFixed(1)}%`;
+
+      let active: string | null = null;
+      const line = (headings[0] ? parseFloat(getComputedStyle(headings[0]).scrollMarginTop) : 96) + 1;
+      headings.forEach(heading => {
+        if (heading.getBoundingClientRect().top <= line) active = heading.id;
+      });
+      const lastHeading = headings[headings.length - 1];
+      const atBottom = window.scrollY > 0 && window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+      if (atBottom && lastHeading && lastHeading.getBoundingClientRect().top < window.innerHeight) active = lastHeading.id;
+      links.forEach(link => {
+        const current = link.dataset.headingId === active;
+        link.classList.toggle('active', current);
+        if (current) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      });
     }
-    window.addEventListener('scroll',onScroll,{passive:true});
-    onScroll();
-  })();
+
+    let frame = 0;
+    function scheduleUpdate() {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        updateReadingState();
+      });
+    }
+
+    links.forEach(link => {
+      link.addEventListener('click', event => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const heading = headings.find(heading => heading.id === link.dataset.headingId);
+        if (!heading) return;
+        event.preventDefault();
+        const disclosure = link.closest('details');
+        if (disclosure) disclosure.open = false;
+        requestAnimationFrame(() => {
+          if (window.location.hash !== link.hash) window.history.pushState(window.history.state, '', link.hash);
+          heading.focus({ preventScroll: true });
+          heading.scrollIntoView({
+            block: 'start',
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+          });
+          scheduleUpdate();
+        });
+      });
+    });
+
+    document.getElementById('articleTocMobile')?.addEventListener('toggle', scheduleUpdate);
+    window.addEventListener('scroll', scheduleUpdate, { passive: true });
+    window.addEventListener('resize', scheduleUpdate);
+    window.addEventListener('hashchange', scheduleUpdate);
+    window.addEventListener('pageshow', scheduleUpdate);
+    updateReadingState();
+  }
 </script>
+
+<style>
+  .article-layout { --article-anchor-offset: 6rem; }
+  .article-layout.without-toc { grid-template-columns: minmax(0, var(--read)); }
+  .article-return { display: inline-block; margin-bottom: 1.35rem; font-size: .86rem; }
+  .article-return:hover { text-decoration: underline; text-underline-offset: .2em; }
+  .article-head .by { display: flex; flex-wrap: wrap; gap: .3rem 1rem; font-family: var(--serif); font-style: normal; color: var(--muted); }
+  .article-head .by .src { margin-left: 0; }
+  .article-head .atags { flex-wrap: wrap; }
+  .article-summary { margin: .9rem 0; color: var(--muted); line-height: 1.85; overflow-wrap: anywhere; }
+  .demo-notice { margin: .9rem 0; padding: .8rem 1rem; border-left: 3px solid var(--accent); background: var(--paper); }
+  .demo-label { display: inline-block; font-size: .83rem; letter-spacing: .08em; color: var(--accent); }
+  .demo-notice p { margin-top: .3rem; font-size: .83rem; color: var(--muted); line-height: 1.7; }
+  .toc-desktop { display: block; position: sticky; top: var(--article-anchor-offset); max-height: calc(100vh - var(--article-anchor-offset) - 1.5rem); }
+  .toc-mobile { display: none; }
+  .toc ol { list-style: none; padding: 0; margin: 0; }
+  .toc a { overflow-wrap: anywhere; }
+  .toc a.toc-subheading { padding-left: 1.5rem; font-size: .8rem; }
+  .toc a:focus-visible, .article-return:focus-visible, .pager a:focus-visible, .atags a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .pager { width: 100%; flex-wrap: wrap; justify-content: space-between; }
+  .pager a { display: flex; flex: 1 1 14rem; flex-direction: column; gap: .25rem; overflow-wrap: anywhere; }
+  .pager .pager-next { margin-left: auto; text-align: right; }
+  .pager-label { font-size: .76rem; color: var(--muted); }
+  .prose { min-width: 0; overflow-wrap: anywhere; }
+  .prose :global(h2), .prose :global(h3) { scroll-margin-top: var(--article-anchor-offset); }
+  .prose :global(h2:focus-visible), .prose :global(h3:focus-visible) { outline: 2px solid var(--accent); outline-offset: .3rem; }
+  .prose :global(pre) { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; }
+  .prose :global(pre code) { overflow-wrap: normal; white-space: pre; }
+  .prose :global(table) { display: block; max-width: 100%; overflow-x: auto; margin: 1.2rem 0; border-collapse: collapse; overscroll-behavior-x: contain; }
+  .prose :global(th), .prose :global(td) { border: 1px solid var(--rule); padding: .5rem .75rem; }
+  .prose :global(iframe), .prose :global(video), .prose :global(svg) { max-width: 100%; }
+
+  @media (max-width: 900px) {
+    .article-layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .article-layout.without-toc { grid-template-columns: minmax(0, 1fr); }
+    .toc-desktop, .article-spacer { display: none; }
+    .toc-mobile { display: block; position: static; max-height: none; overflow: visible; margin-bottom: 1.6rem; padding: .4rem 1rem; border: 1px solid var(--rule); border-radius: var(--r); background: var(--paper); }
+    .toc-mobile summary { min-height: 44px; padding: .55rem 0; cursor: pointer; font-family: var(--kai); font-size: 1rem; color: var(--accent); }
+    .toc-mobile summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .toc-mobile nav { max-height: min(55vh, 24rem); overflow-y: auto; padding: .4rem 0 .6rem; border-top: 1px solid var(--rule); }
+    .toc-mobile a { padding-top: .65rem; padding-bottom: .65rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :global(html) { scroll-behavior: auto; }
+    .progress-bar i, .toc a { transition: none; }
+  }
+</style>

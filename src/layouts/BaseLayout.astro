@@ -4,24 +4,20 @@ import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
 import { site } from '../config';
 
-const { title = `${site.name} · ${site.author}`, description = site.description, active = '' } = Astro.props;
+interface Props { title?: string; description?: string; active?: string; demo?: boolean; authorDemo?: boolean }
+const { title = site.name, description = site.description, active = '', demo = false, authorDemo = site.authorDemo } = Astro.props;
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
-
-// WebSite 级 JSON-LD（所有页面通用）
 const websiteJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": site.name,
-  "description": site.description,
-  "url": Astro.site?.href || `https://${site.domain}/`,
-  "author": {
-    "@type": "Person",
-    "name": site.author,
-  },
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": `${Astro.site?.href || `https://${site.domain}/`}search?q={search_term_string}`,
-    "query-input": "required name=search_term_string",
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: site.name,
+  description: site.description,
+  url: Astro.site?.href || `https://${site.domain}/`,
+  ...(!demo && !authorDemo && !site.authorDemo ? { author: { '@type': 'Person', name: site.author } } : {}),
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${Astro.site?.href || `https://${site.domain}/`}search/?q={search_term_string}`,
+    'query-input': 'required name=search_term_string',
   },
 };
 ---
@@ -46,41 +42,180 @@ const websiteJsonLd = {
   <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;700&family=Ma+Shan+Zheng&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
   <link rel="alternate" type="application/rss+xml" title={site.name} href="/rss.xml" />
   <link rel="sitemap" type="application/xml" title={site.name} href="/sitemap.xml" />
-  <script type="application/ld+json" set:html={JSON.stringify(websiteJsonLd)} />
+  <script type="application/ld+json" set:html={JSON.stringify(websiteJsonLd).replace(/</g, '\\u003c')} />
   <slot name="ld-json" />
   <script is:inline>
-    (function(){
-      let s=null;try{s=localStorage.getItem('qd-theme')}catch(e){}
-      if(s){document.documentElement.setAttribute('data-theme',s)}
-      else if(matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','dark')}
-    })();
+    document.documentElement.dataset.js = 'true';
+    try {
+      const theme = localStorage.getItem('qd-theme');
+      if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+      else if (matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.dataset.theme = 'dark';
+    } catch {
+      if (matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.dataset.theme = 'dark';
+    }
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
   </script>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">跳到正文</a>
   <Nav active={active} />
-  <main>
-    <slot />
-  </main>
+  <main id="main-content" tabindex="-1"><slot /></main>
   <Footer />
   <script is:inline>
-    (function(){
-      const btn=document.getElementById('themeBtn');
-      if(!btn)return;
-      function ic(t){return t==='dark'?'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/>':'<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>';}
-      function sync(){const t=document.documentElement.getAttribute('data-theme');btn.innerHTML=ic(t);}
-      btn.addEventListener('click',()=>{
-        const c=document.documentElement.getAttribute('data-theme');
-        const n=c==='dark'?'light':'dark';
-        document.documentElement.setAttribute('data-theme',n);
-        try{localStorage.setItem('qd-theme',n)}catch(e){}
-        sync();
+    (() => {
+      const button = document.getElementById('themeBtn');
+      const icon = button?.querySelector('svg');
+      function syncTheme() {
+        const dark = document.documentElement.dataset.theme === 'dark';
+        if (icon) icon.innerHTML = dark
+          ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/>'
+          : '<path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/>';
+        button?.setAttribute('aria-label', dark ? '切换为明亮主题' : '切换为深色主题');
+        button?.setAttribute('title', dark ? '切换为明亮主题' : '切换为深色主题');
+      }
+      button?.addEventListener('click', () => {
+        const theme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = theme;
+        try { localStorage.setItem('qd-theme', theme); } catch {}
+        syncTheme();
       });
-      sync();
-      const mb=document.getElementById('menuBtn');
-      if(mb)mb.addEventListener('click',()=>{
-        const nav=document.getElementById('nav');
-        nav.classList.toggle('open');
-        mb.setAttribute('aria-expanded',nav.classList.contains('open'));
+      syncTheme();
+
+      const menu = document.getElementById('menuBtn');
+      const nav = document.getElementById('nav');
+      function closeMenu(focus = false) {
+        nav?.classList.remove('open');
+        menu?.setAttribute('aria-expanded', 'false');
+        menu?.setAttribute('aria-label', '展开菜单');
+        menu?.setAttribute('title', '展开菜单');
+        if (focus) menu?.focus();
+      }
+      menu?.addEventListener('click', () => {
+        const open = !nav.classList.contains('open');
+        nav.classList.toggle('open', open);
+        menu.setAttribute('aria-expanded', String(open));
+        menu.setAttribute('aria-label', open ? '收起菜单' : '展开菜单');
+        menu.setAttribute('title', open ? '收起菜单' : '展开菜单');
+      });
+      nav?.addEventListener('click', event => { if (event.target.closest('a')) closeMenu(); });
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && nav?.classList.contains('open')) closeMenu(true);
+      });
+      document.addEventListener('click', event => {
+        if (!event.target.closest('.topbar')) closeMenu();
+      });
+      matchMedia('(max-width: 900px)').addEventListener('change', () => closeMenu());
+
+      const list = document.querySelector('[data-list-page]');
+      if ('scrollRestoration' in history) history.scrollRestoration = list ? 'manual' : 'auto';
+      const detail = document.querySelector('[data-detail-page]');
+      const returnLink = document.querySelector('[data-return-list]');
+      const key = 'qd-navigation';
+      const relative = value => {
+        const url = new URL(value || location.href, location.origin);
+        return url.pathname + url.search;
+      };
+      const sectionNames = { notes: '札记', essays: '随笔', works: '作品', tags: '标签', search: '搜索结果' };
+      const section = location.pathname.split('/')[1];
+      if (document.querySelector('[data-not-found]') && returnLink && ['notes', 'essays', 'works'].includes(section)) {
+        returnLink.href = `/${section}/`;
+        returnLink.textContent = `返回${sectionNames[section]}列表`;
+        returnLink.hidden = false;
+      }
+      function validSource(value) {
+        if (!value || typeof value.url !== 'string' || !Number.isFinite(value.y)) return false;
+        const url = new URL(value.url, location.origin);
+        return url.origin === location.origin && /^\/(notes\/|essays\/|works\/|tags\/|search\/)?$/.test(url.pathname);
+      }
+      let pending = null;
+      try {
+        pending = JSON.parse(sessionStorage.getItem(key) || 'null');
+        sessionStorage.removeItem(key);
+      } catch {}
+      if (pending && pending.target === relative() && document.referrer && pending.from === relative(document.referrer) && new URL(document.referrer).origin === location.origin && Date.now() - pending.at < 120000 && validSource(pending.source)) {
+        if (detail && pending.kind === 'detail') history.replaceState({ ...history.state, qdSource: pending.source }, '');
+        if (list && pending.kind === 'return') history.replaceState({ ...history.state, qdView: pending.source }, '');
+      }
+      const source = history.state?.qdSource;
+      if (returnLink && validSource(source)) {
+        returnLink.href = source.url;
+        const originSection = new URL(source.url, location.origin).pathname.split('/')[1];
+        returnLink.textContent = originSection === 'search' ? '返回搜索结果' : originSection ? `返回${sectionNames[originSection]}列表` : '返回首页';
+        returnLink.hidden = false;
+      }
+
+      let position = history.state?.qdView?.url === relative() ? history.state.qdView : null;
+      let restoring = Boolean(list && position);
+      let interacted = false;
+      let scrollFrame = 0;
+      function savePosition() {
+        if (!list || restoring) return;
+        history.replaceState({ ...history.state, qdView: { url: relative(), y: window.scrollY } }, '');
+      }
+      function restorePosition() {
+        if (!list || !position || interacted) { restoring = false; return; }
+        const max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+        const top = document.querySelector('[data-list-top]') || list;
+        const fallback = Math.max(0, top.getBoundingClientRect().top + window.scrollY - 90);
+        const y = Number.isFinite(position.y) && position.y <= max ? position.y : fallback;
+        window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
+        restoring = false;
+        savePosition();
+      }
+      function contentReady() {
+        if (position) requestAnimationFrame(restorePosition);
+        else savePosition();
+      }
+      window.addEventListener('qd:content-ready', contentReady);
+      window.addEventListener('qd:before-change', () => {
+        savePosition();
+        position = null;
+        restoring = false;
+      });
+      window.addEventListener('popstate', () => {
+        if (!list) return;
+        position = history.state?.qdView?.url === relative() ? history.state.qdView : { url: relative(), y: 0 };
+        restoring = true;
+        interacted = false;
+        if (!document.querySelector('[data-deferred-results]')) requestAnimationFrame(restorePosition);
+      });
+      window.addEventListener('scroll', () => {
+        if (scrollFrame) return;
+        scrollFrame = requestAnimationFrame(() => { scrollFrame = 0; savePosition(); });
+      }, { passive: true });
+      window.addEventListener('pagehide', savePosition);
+      window.addEventListener('pageshow', event => {
+        if (event.persisted && list) {
+          position = history.state?.qdView;
+          interacted = false;
+          restoring = Boolean(position);
+          requestAnimationFrame(restorePosition);
+        }
+      });
+      window.addEventListener('load', () => { if (position && !interacted) restorePosition(); });
+      ['wheel', 'touchstart', 'keydown'].forEach(type => window.addEventListener(type, () => {
+        interacted = true;
+        if (!restoring) position = null;
+      }, { passive: true }));
+      if (!document.querySelector('[data-deferred-results]')) requestAnimationFrame(contentReady);
+
+      document.addEventListener('click', event => {
+        const link = event.target.closest('a');
+        if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target === '_blank') return;
+        const target = new URL(link.href);
+        if (target.origin !== location.origin) return;
+        savePosition();
+        let next = null;
+        if (link.hasAttribute('data-detail-link')) {
+          const origin = list ? { url: relative(), y: window.scrollY } : history.state?.qdSource;
+          if (validSource(origin)) next = { kind: 'detail', source: origin };
+        } else if (link.hasAttribute('data-return-list') && validSource(history.state?.qdSource)) {
+          next = { kind: 'return', source: history.state.qdSource };
+        }
+        try {
+          if (next) sessionStorage.setItem(key, JSON.stringify({ ...next, from: relative(), target: relative(target.href), at: Date.now() }));
+          else sessionStorage.removeItem(key);
+        } catch {}
       });
     })();
   </script>

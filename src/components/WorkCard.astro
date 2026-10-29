@@ -1,11 +1,26 @@
 ---
-const { work, index } = Astro.props;
+import type { CollectionEntry } from 'astro:content';
+import { entryURL, tagURL } from '../content-utils';
+
+interface Props { work: CollectionEntry<'works'>; index?: number; showSection?: boolean }
+const { work, showSection = false } = Astro.props;
+const { title, desc, cls, platforms, tags, demo, featured, date } = work.data;
 ---
-<a href={`/works/${work.slug}/`} class="work">
-  <div class={`work-thumb ${work.data.cls}`}></div>
+<article class="work">
+  <div class={`work-thumb ${cls}`} aria-hidden="true"><span>{title.split(' · ')[0]}</span></div>
   <div class="work-info">
-    <h4>{work.data.title}</h4>
-    <p>{work.data.desc}</p>
-    <div class="work-links">{work.data.links.map(l => <span>{l}</span>)}</div>
+    <div class="card-labels">
+      {demo && <span class="demo-badge">演示内容</span>}
+      {showSection && <span class="section-label">作品</span>}
+      {featured && <span class="featured-label">作者精选</span>}
+    </div>
+    <a href={entryURL(work)} class="card-primary" data-detail-link>
+      <h3 class="card-title">{title}</h3>
+      <p>{desc}</p>
+      <span class="work-read">阅读站内介绍 <span aria-hidden="true">↗</span></span>
+    </a>
+    {date && <time class="work-date" datetime={date}>发布于 {date}</time>}
+    {platforms.length > 0 && <p class="work-platforms">平台：{platforms.join(' · ')}</p>}
+    {tags.length > 0 && <div class="tags" aria-label="内容标签">{tags.map(tag => <a class="tag" href={tagURL(tag)}>{tag}</a>)}</div>}
   </div>
-</a>
+</article>

@@ -2,7 +2,7 @@
 title: "青灯 · 本站"
 desc: "即此站本身。Astro + Markdown，水墨文学风，写完即发。"
 cls: "t4"
-links: ["GitHub", "关于本站"]
+platforms: ["GitHub", "关于本站"]
 order: 4
 ---
 

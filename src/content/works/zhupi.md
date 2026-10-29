@@ -2,7 +2,7 @@
 title: "朱批 · 阅读笔记器"
 desc: "把网页摘抄一键转为带批注的卡片，像古人读书时在页边落朱笔。"
 cls: "t2"
-links: ["GitHub", "Chrome 商店"]
+platforms: ["GitHub", "Chrome 商店"]
 order: 2
 ---
 

@@ -1,31 +1,43 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import DailyCard from '../components/DailyCard.astro';
-import { about, site } from '../config';
+import { about, site, calendar, hitokoto } from '../config';
+import { displayTitle } from '../content-utils';
 
-// Person JSON-LD
-const personJsonLd = {
+const contacts = about.contacts.filter(contact => contact.verified === true);
+const hasWidgets = calendar.enabled || hitokoto.enabled;
+const title = displayTitle(`关于 · ${site.name}`, about.demo);
+const description = about.demo
+  ? '关于页演示内容：展示个人简介、阅读近况与可选的日历、一言挂件。姓名、职业与经历均为示例，并非已核实的个人履历。'
+  : about.paragraphs.join(' ');
+const personJsonLd = about.demo === false && site.authorDemo === false ? {
   "@context": "https://schema.org",
   "@type": "Person",
   "name": about.name,
   "description": about.paragraphs.join(' '),
-  "url": new URL('/about', Astro.site).href,
+  "url": new URL('/about/', Astro.site).href,
   "jobTitle": about.role,
-  "sameAs": about.contacts
-    .filter(c => c.href.startsWith('http'))
-    .map(c => c.href),
-};
+  "sameAs": contacts
+    .filter(contact => /^https?:\/\//.test(contact.href))
+    .map(contact => contact.href),
+} : null;
 ---
-<BaseLayout title={`关于 · ${site.name}`} active="about">
-  <script type="application/ld+json" slot="ld-json" set:html={JSON.stringify(personJsonLd)} />
+<BaseLayout title={title} description={description} active="about" authorDemo={about.demo || site.authorDemo}>
+  <Fragment slot="ld-json">
+    {personJsonLd && <script type="application/ld+json" set:html={JSON.stringify(personJsonLd).replace(/</g, '\\u003c')} />}
+  </Fragment>
   <div class="container">
-    <div class="about-layout">
+    <div class:list={['about-layout', { 'without-widgets': !hasWidgets }]}>
       <div class="about-wrap">
         <div class="about-hero">
           <div class="avatar">{about.avatar}</div>
-          <div>
-            <h1>{about.name}</h1>
+          <div class="about-identity">
+            <div class="about-name">
+              <h1>{about.name}</h1>
+              {about.demo && <span class="about-demo-label">演示内容</span>}
+            </div>
             <div class="role">{about.role}</div>
+            {about.demo && <p class="about-demo-note">以下姓名、职业、简介与近况均为演示内容，不是已核实的个人履历。</p>}
           </div>
         </div>
         <div class="about-prose">
@@ -36,13 +48,26 @@ const personJsonLd = {
             {about.status.map(s => <li><b>{s.label}</b>　{s.value}</li>)}
           </ul>
         </div>
-        <div class="contact-row">
-          {about.contacts.map(c => <a href={c.href}>{c.label}</a>)}
-        </div>
+        {contacts.length > 0 && <div class="contact-row">
+          {contacts.map(contact => <a href={contact.href}>{contact.label}</a>)}
+        </div>}
       </div>
-      <aside class="about-side">
+      {hasWidgets && <aside class="about-side" aria-label="日常挂件">
         <DailyCard />
-      </aside>
+      </aside>}
     </div>
   </div>
 </BaseLayout>
+<style>
+.about-layout.without-widgets{grid-template-columns:minmax(0,var(--read))}
+.about-wrap{min-width:0;width:100%}
+.about-side{min-width:0}
+.about-identity{min-width:0;overflow-wrap:anywhere}
+.about-name{display:flex;align-items:center;flex-wrap:wrap;gap:.35rem .7rem}
+.about-demo-label{font-family:var(--kai);font-size:.78rem;letter-spacing:.08em;color:var(--accent);border:1px solid var(--rule2);border-radius:3px;padding:.15rem .5rem;white-space:nowrap}
+.about-demo-note{font-size:.85rem;line-height:1.8;color:var(--muted);margin:.7rem 0 0}
+@media(max-width:900px){
+  .about-layout{grid-template-columns:minmax(0,1fr);gap:2rem}
+  .about-side{position:static;top:auto;width:100%;max-width:var(--read);margin-inline:auto}
+}
+</style>

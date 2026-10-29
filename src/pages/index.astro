@@ -2,55 +2,40 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ArticleCard from '../components/ArticleCard.astro';
 import WorkCard from '../components/WorkCard.astro';
-import { getCollection } from 'astro:content';
-import { hero, sections, site } from '../config';
+import { getSectionEntries, homeSelection, type Section } from '../content-utils';
+import { hero, sections, site, footer } from '../config';
 
-const notes = (await getCollection('notes')).sort((a,b) => b.data.date.localeCompare(a.data.date));
-const essays = (await getCollection('essays')).sort((a,b) => b.data.date.localeCompare(a.data.date));
-const works = (await getCollection('works')).sort((a,b) => a.data.order - b.data.order);
+const groups = await Promise.all((['notes', 'essays', 'works'] as Section[]).map(async section => {
+  const entries = await getSectionEntries(section);
+  return { section, entries, selected: homeSelection(entries), config: sections[section] };
+}));
 ---
-<BaseLayout title={`${site.name} · ${site.author}`} active="notes">
-  <div class="container">
-    <div class="hero">
-      <div class="seal-stamp">{hero.seal.map(s => <>{s}<br/></>)}</div>
-      <div class="vol">{hero.vol}</div>
+<BaseLayout title={`${site.name} · 阅读、随笔与作品`} active="home">
+  <div class="container home-page" data-list-page>
+    <header class="hero home-hero">
+      <div class="seal-stamp" aria-hidden="true">{hero.seal.map(s => <>{s}<br/></>)}</div>
+      <p class="home-eyebrow">阅读 · 记录 · 创作</p>
       <h1>{hero.title}</h1>
-      <p class="lede" set:html={hero.lede} />
-      <div class="meta-row">
-        {hero.chips.map(chip => (
-          <span class="chip"><b>{chip.hi}</b>{chip.text}</span>
-        ))}
+      <p class="lede">{hero.lede}</p>
+      <div class="home-note">
+        <p><span class="demo-badge">演示站点</span> 当前文章、作品介绍与个人简介均为演示内容。</p>
+        <a href="/rss.xml" class="rss-entry">{footer.rssLabel} <span aria-hidden="true">↗</span></a>
       </div>
+    </header>
+    <div class="home-columns">
+      {groups.map(({ section, entries, selected, config }) => (
+        <section class="home-section" aria-labelledby={`home-${section}`}>
+          <div class="sec-head">
+            <h2 id={`home-${section}`}>{config.title}</h2>
+            <a class="sec-more" href={`/${section}/`}>{config.moreLabel.replace('{n}', String(entries.length))}</a>
+          </div>
+          <p class="sec-sub">{config.sub}</p>
+          <div class:list={[section === 'works' ? 'work-grid' : 'cards']}>
+            {selected.map(item => item.collection === 'works' ? <WorkCard work={item} /> : <ArticleCard item={item} />)}
+          </div>
+          {selected.length === 0 && <p class="empty-state">暂无内容，稍后再来翻阅。</p>}
+        </section>
+      ))}
     </div>
-
-    <section class="sec-block">
-      <div class="sec-head">
-        <h2>{sections.notes.title}<span class="sec-sub">{sections.notes.sub}</span></h2>
-        <a class="sec-more" href="/notes">{sections.notes.moreLabel.replace('{n}', notes.length)}</a>
-      </div>
-      <div class="cards">
-        {notes.slice(0, sections.notes.showCount).map(it => <ArticleCard item={it} section="notes" />)}
-      </div>
-    </section>
-
-    <section class="sec-block">
-      <div class="sec-head">
-        <h2>{sections.essays.title}<span class="sec-sub">{sections.essays.sub}</span></h2>
-        <a class="sec-more" href="/essays">{sections.essays.moreLabel.replace('{n}', essays.length)}</a>
-      </div>
-      <div class="cards">
-        {essays.slice(0, sections.essays.showCount).map(it => <ArticleCard item={it} section="essays" />)}
-      </div>
-    </section>
-
-    <section class="sec-block">
-      <div class="sec-head">
-        <h2>{sections.works.title}<span class="sec-sub">{sections.works.sub}</span></h2>
-        <a class="sec-more" href="/works">{sections.works.moreLabel.replace('{n}', works.length)}</a>
-      </div>
-      <div class="work-grid">
-        {works.map((w, i) => <WorkCard work={w} index={i} />)}
-      </div>
-    </section>
   </div>
 </BaseLayout>

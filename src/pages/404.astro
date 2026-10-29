@@ -4,14 +4,15 @@ import { site } from '../config';
 ---
 <BaseLayout title={`页面未找到 · ${site.name}`} description="您访问的页面不存在，请返回首页继续浏览。">
   <div class="container">
-    <div class="not-found">
+    <div class="not-found" data-detail-page data-not-found>
       <div class="nf-code">404</div>
       <div class="nf-seal">朱批</div>
       <h1>此卷未寻得</h1>
-      <p class="nf-desc">青灯之下，未见此页。或许已被归入他卷，或从未写就。</p>
+      <p class="nf-desc">内容不存在或地址已变更。你可以返回原列表，或重新寻找想读的内容。</p>
       <div class="nf-actions">
+        <a href="/" class="nf-link" data-return-list hidden>返回原列表</a>
         <a href="/" class="nf-link">← 回到首页</a>
-        <a href="/search" class="nf-link">搜索内容</a>
+        <a href="/search/" class="nf-link">搜索内容</a>
       </div>
     </div>
   </div>

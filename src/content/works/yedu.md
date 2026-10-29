@@ -2,7 +2,7 @@
 title: "夜读 · 暗色主题集"
 desc: "为常见文档站做的偏暖暗色主题。拒绝纯黑，用夜墨的温度护眼。"
 cls: "t3"
-links: ["GitHub", "VS Code 插件"]
+platforms: ["GitHub", "VS Code 插件"]
 order: 3
 ---
 

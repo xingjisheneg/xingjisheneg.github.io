@@ -2,7 +2,7 @@
 title: "卷尺 · 阅读时长统计"
 desc: "一个极简的阅读计时器，读完一本书，留下一条时间线。"
 cls: "t1"
-links: ["GitHub"]
+platforms: ["GitHub"]
 order: 5
 ---
 

@@ -1,9 +1,21 @@
 ---
+import type { GetStaticPaths } from 'astro';
+import type { CollectionEntry } from 'astro:content';
 import ArticleLayout from '../../layouts/ArticleLayout.astro';
-import { getCollection } from 'astro:content';
+import { getSectionEntries } from '../../content-utils';
 
-export async function getStaticPaths() {
-  const works = (await getCollection('works')).sort((a,b) => a.data.order - b.data.order);
+type Work = CollectionEntry<'works'>;
+type WorkLink = Work['data']['links'][number];
+
+interface Props {
+  item: Work;
+  prev: Work | null;
+  next: Work | null;
+}
+
+export const getStaticPaths = (async () => {
+  const works = (await getSectionEntries('works'))
+    .filter((entry): entry is CollectionEntry<'works'> => entry.collection === 'works');
   return works.map((item, i) => ({
     params: { slug: item.slug },
     props: {
@@ -12,10 +24,46 @@ export async function getStaticPaths() {
       next: i > 0 ? works[i - 1] : null,
     },
   }));
-}
+}) satisfies GetStaticPaths;
+
 const { item, prev, next } = Astro.props;
-const { Content } = await item.render();
+const { Content, headings } = await item.render();
+const verifiedLinks = item.data.links.filter(link => link.verified === true);
+const platforms = item.data.platforms.map(platform => platform.trim()).filter(Boolean);
+const linkLabels: Record<WorkLink['kind'], string> = {
+  source: '查看源码',
+  demo: '在线体验',
+  download: '下载',
+};
+const missingLinks = (['source', 'demo', 'download'] as const)
+  .filter(kind => !verifiedLinks.some(link => link.kind === kind))
+  .map(kind => ({ source: '源码', demo: '体验', download: '下载' })[kind]);
 ---
-<ArticleLayout item={{...item, data: {...item.data, date: '', read: '', tags: ['作品']}}} section="works" sectionLabel="作品集" prev={prev} next={next}>
+<ArticleLayout item={item} section="works" sectionLabel="作品集" headings={headings} prev={prev} next={next}>
+  <div class="project-details" slot="details" aria-label="作品平台与链接">
+    {platforms.length > 0 && <p class="project-platforms"><span>平台：</span>{platforms.join(' · ')}</p>}
+    {verifiedLinks.length > 0 && (
+      <div class="project-actions">
+        {verifiedLinks.map(link => <a class="project-link" href={link.url} target="_blank" rel="noopener noreferrer">{linkLabels[link.kind]}<span class="external-note">（新窗口）</span></a>)}
+      </div>
+    )}
+    {missingLinks.length > 0 && (
+      <p class="project-availability">{missingLinks.join('、')}地址尚未提供或未经核验，因此不展示对应入口；当前可阅读站内作品介绍。</p>
+    )}
+  </div>
   <Content />
 </ArticleLayout>
+
+<style>
+  .project-details { margin-bottom: 1.8rem; padding: 1rem 1.1rem; border: 1px solid var(--rule); border-radius: var(--r); background: var(--paper); }
+  .project-platforms { font-size: .88rem; color: var(--muted); overflow-wrap: anywhere; }
+  .project-platforms > span { color: var(--ink); }
+  .project-actions { display: flex; flex-wrap: wrap; gap: .65rem; }
+  .project-platforms + .project-actions { margin-top: .8rem; }
+  .project-link { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: .45rem .85rem; border: 1px solid var(--rule2); border-radius: var(--r); font-size: .86rem; }
+  .project-link:hover { border-color: var(--accent); background: var(--bg2); }
+  .project-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .external-note { font-size: .73rem; color: var(--muted); }
+  .project-availability { margin-top: .75rem; font-size: .82rem; line-height: 1.8; color: var(--muted); }
+  .project-availability:first-child { margin-top: 0; }
+</style>

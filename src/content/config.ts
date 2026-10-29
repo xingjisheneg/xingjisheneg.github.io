@@ -1,13 +1,25 @@
 import { defineCollection, z } from 'astro:content';
 
+const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '日期须为 YYYY-MM-DD').refine(value => {
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
+}, '请填写有效日期');
+
+const shared = {
+  title: z.string().trim().min(1),
+  demo: z.boolean().default(true),
+  featured: z.boolean().default(false),
+  tags: z.array(z.string().trim().min(1)).default([]).transform(tags => [...new Set(tags)]),
+  updated: date.optional(),
+};
+
 const notes = defineCollection({
   type: 'content',
   schema: z.object({
-    title: z.string(),
+    ...shared,
     src: z.string().optional(),
-    date: z.string(),
-    excerpt: z.string(),
-    tags: z.array(z.string()),
+    date,
+    excerpt: z.string().min(1),
     read: z.string(),
   }),
 });
@@ -15,22 +27,29 @@ const notes = defineCollection({
 const essays = defineCollection({
   type: 'content',
   schema: z.object({
-    title: z.string(),
-    date: z.string(),
-    excerpt: z.string(),
-    tags: z.array(z.string()),
+    ...shared,
+    date,
+    excerpt: z.string().min(1),
     read: z.string(),
   }),
+});
+
+const projectLink = z.object({
+  kind: z.enum(['source', 'demo', 'download']),
+  url: z.string().trim().url().refine(value => ['https:', 'http:'].includes(new URL(value).protocol), '项目地址只支持 http / https'),
+  verified: z.boolean().default(false),
 });
 
 const works = defineCollection({
   type: 'content',
   schema: z.object({
-    title: z.string(),
-    desc: z.string(),
+    ...shared,
+    desc: z.string().min(1),
     cls: z.string(),
-    links: z.array(z.string()),
-    order: z.number(),
+    date: date.optional(),
+    platforms: z.array(z.string()).default([]),
+    links: z.array(projectLink).default([]).refine(links => new Set(links.map(link => link.kind)).size === links.length, '源码、体验、下载各维护一个地址'),
+    order: z.number().finite(),
   }),
 });
 

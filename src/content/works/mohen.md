@@ -2,7 +2,7 @@
 title: "墨痕 · 排印实验"
 desc: '一个用 Canvas 模拟毛笔起笔、行笔、收笔的小工具。试着在屏幕上写出有骨的字。'
 cls: "t1"
-links: ["GitHub", "线上 Demo"]
+platforms: ["GitHub", "线上 Demo"]
 order: 1
 ---
 

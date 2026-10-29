@@ -1,0 +1,17 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ContentList from '../components/ContentList.astro';
+import { getAllEntries, byDate } from '../content-utils';
+import { site } from '../config';
+const entries = (await getAllEntries()).sort(byDate);
+---
+<BaseLayout title={`标签索引 · ${site.name}`}>
+  <div class="container collection-page">
+    <header class="hero list-hero">
+      <p class="vol">循词寻卷</p>
+      <h1 data-tag-heading>标签索引</h1>
+      <p class="lede">同一个词，串起札记、随笔与作品。标签按作者维护的名称精确聚合。</p>
+    </header>
+    <ContentList entries={entries} mode="tags" />
+  </div>
+</BaseLayout>

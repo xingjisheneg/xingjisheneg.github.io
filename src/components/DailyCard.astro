@@ -1,284 +1,447 @@
 ---
 import { calendar as calCfg, hitokoto as hkCfg } from '../config';
 ---
-{calCfg.enabled && hkCfg.enabled && (
-  <div class="dc-box" data-daily
-       data-cats={hkCfg.categories.join(',')}
-       data-auto={String(hkCfg.autoRefresh)}
-       data-click={hkCfg.clickToRefresh ? '1' : '0'}>
-    <div class="dc-label">{calCfg.label}<span class="dc-line"></span></div>
+{(calCfg.enabled || hkCfg.enabled) && (
+  <div class="dc-box" data-daily>
+    <div class="dc-label"><span data-export-text>{calCfg.enabled ? calCfg.label : '一 言'}</span><span class="dc-line" data-export-line></span></div>
 
-    <!-- ▼ 视觉中心：巨大日期数字 -->
-    <div class="dc-hero">
-      <div class="dc-my" data-cal-my>—</div>
-      <div class="dc-day-wrap"><div class="dc-day" data-cal-day>—</div></div>
-      <div class="dc-week" data-cal-week>—</div>
-    </div>
-
-    <div class="dc-rule"></div>
-
-    <!-- ▼ 辅助信息：农历 + 干支 -->
-    <div class="dc-aux">
-      <div class="dc-lunar" data-cal-lunar>—</div>
-      <div class="dc-gz" data-cal-gz>—</div>
-    </div>
-
-    <!-- ▼ 一言题记 -->
-    <div class="dc-quote">
-      <p class="dc-text" data-hk-text>{hkCfg.fallback.text}</p>
-      <p class="dc-from" data-hk-from>—— {hkCfg.fallback.from}</p>
-    </div>
-
-    <div class="dc-foot">
-      <span class="dc-hint" data-hk-hint>{hkCfg.clickToRefresh ? '点击换句' : ''}</span>
-      <div class="dc-actions">
-        <button class="dc-export" data-export title="保存为图片">存图</button>
-        <span class="dc-seal">{calCfg.seal}</span>
+    {calCfg.enabled && <section data-calendar data-timeout={calCfg.timeoutMs} data-state="idle" aria-label="本地日历">
+      <div class="dc-hero">
+        <div class="dc-my" data-cal-my data-export-text>本地日期</div>
+        <div class="dc-day-wrap"><time class="dc-day" data-cal-day data-export-text>—</time></div>
+        <div class="dc-week" data-cal-week data-export-text>—</div>
       </div>
+      <div class="dc-rule" data-export-line></div>
+      <div class="dc-aux" data-cal-aux>
+        <div class="dc-lunar" data-cal-lunar data-export-text>农历待加载</div>
+        <div class="dc-gz" data-cal-gz data-export-text></div>
+      </div>
+      <div class="dc-feedback">
+        <p class="dc-status" data-cal-status data-export-text role="status" aria-atomic="true">公历使用本地时间；农历尚未加载。</p>
+        <button type="button" class="dc-button" data-cal-retry hidden>重试农历</button>
+      </div>
+    </section>}
+
+    {hkCfg.enabled && <section class="dc-quote" data-hitokoto data-state="idle"
+      data-cats={hkCfg.categories.join(',')} data-auto={hkCfg.autoRefresh} data-timeout={hkCfg.timeoutMs} aria-label="一言题记">
+      <p class="dc-source" data-hk-source data-export-text>本地兜底句</p>
+      <div data-hk-content>
+        <p class="dc-text" data-hk-text data-export-text>{hkCfg.fallback.text}</p>
+        <p class="dc-from" data-hk-from data-export-text>—— {hkCfg.fallback.from}</p>
+      </div>
+      <div class="dc-feedback">
+        <p class="dc-status" data-hk-status data-export-text role="status" aria-atomic="true">尚未请求一言；当前为本地兜底句。</p>
+        <button type="button" class="dc-button" data-hk-retry hidden>重试一言</button>
+      </div>
+    </section>}
+
+    <noscript><p class="dc-status" data-export-text>挂件需启用 JavaScript；个人简介不受影响。本地兜底内容可直接阅读。</p></noscript>
+    <div class="dc-foot">
+      <div class="dc-actions">
+        {hkCfg.enabled && hkCfg.clickToRefresh && <button type="button" class="dc-button" data-hk-refresh aria-label="换一句一言" disabled>换句</button>}
+        <button type="button" class="dc-button" data-export title="将当前卡片保存为 PNG 图片" disabled>存图</button>
+      </div>
+      {calCfg.enabled && <span class="dc-seal" aria-hidden="true">{calCfg.seal}</span>}
     </div>
+    <p class="dc-status dc-export-status" data-export-status role="status" aria-atomic="true" hidden></p>
   </div>
 )}
 <style>
-.dc-box{border:1px solid var(--rule);border-radius:var(--r);background:var(--paper);padding:1.5rem 1.5rem 1.2rem;position:relative;font-family:var(--serif);transition:border-color .2s}
-.dc-box[data-click="1"]{cursor:pointer}
-.dc-box:hover{border-color:var(--accent)}
+.dc-box{border:1px solid var(--rule);border-radius:var(--r);background:var(--paper);padding:1.5rem 1.5rem 1.2rem;position:relative;font-family:var(--serif);min-width:0}
+.dc-box [hidden]{display:none!important}
 .dc-label{font-family:var(--kai);color:var(--accent);font-size:.78rem;letter-spacing:.3em;display:flex;align-items:center;gap:.6rem;margin-bottom:.8rem}
 .dc-line{flex:1;height:1px;background:var(--rule)}
-
-/* —— 视觉中心：日期数字 —— */
 .dc-hero{text-align:center;padding:.3rem 0 .7rem}
 .dc-my{font-family:var(--kai);font-size:.92rem;color:var(--muted);letter-spacing:.15em;margin-bottom:8px}
 .dc-day-wrap{height:96px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
 .dc-day{font-family:var(--latin);font-size:5.5rem;font-weight:600;color:var(--ink);line-height:1;letter-spacing:-.02em}
 .dc-week{font-family:var(--kai);font-size:.82rem;color:var(--accent);letter-spacing:.2em}
-
 .dc-rule{height:1px;background:var(--rule);margin:.5rem auto .8rem;width:60%}
-
-/* —— 辅助信息 —— */
-.dc-aux{text-align:center;margin-bottom:1rem}
-.dc-lunar{font-family:var(--kai);font-size:1.02rem;color:var(--ink);letter-spacing:.05em;margin-bottom:.25rem}
-.dc-gz{font-size:.76rem;color:var(--faint);letter-spacing:.08em}
-
-/* —— 一言 —— */
-.dc-quote{position:relative;padding:.85rem .9rem .8rem;border-top:1px dashed var(--rule);border-left:3px solid var(--accent);min-height:3rem}
-.dc-text{font-family:var(--kai);font-size:1.08rem;line-height:1.85;color:var(--ink);letter-spacing:.04em;transition:opacity .25s}
-.dc-from{font-family:var(--latin);font-style:italic;font-size:.8rem;color:var(--accent);margin-top:.45rem;transition:opacity .25s}
-
-.dc-foot{display:flex;justify-content:space-between;align-items:center;margin-top:.9rem;padding-top:.8rem;border-top:1px dashed var(--rule)}
-.dc-hint{font-family:var(--kai);font-size:.72rem;color:var(--faint);letter-spacing:.12em}
-.dc-actions{display:flex;align-items:center;gap:.7rem}
-.dc-export{font-family:var(--kai);font-size:.72rem;color:var(--faint);letter-spacing:.12em;background:none;border:1px solid var(--rule);border-radius:3px;padding:.2rem .55rem;cursor:pointer;transition:.18s;line-height:1.4}
-.dc-export:hover{color:var(--accent);border-color:var(--accent)}
-.dc-seal{width:30px;height:30px;border:2px solid var(--seal);color:var(--seal);display:flex;align-items:center;justify-content:center;font-family:var(--kai);font-size:1rem;border-radius:4px;transform:rotate(5deg);opacity:.82}
-.dc-fade{opacity:0}
+.dc-aux{text-align:center;margin-bottom:.7rem}
+.dc-lunar{font-family:var(--kai);font-size:1.02rem;color:var(--ink);letter-spacing:.05em;margin-bottom:.25rem;overflow-wrap:anywhere}
+.dc-gz{font-size:.76rem;color:var(--muted);letter-spacing:.08em;overflow-wrap:anywhere}
+.dc-quote{position:relative;padding:.85rem .9rem .8rem;border-top:1px dashed var(--rule);border-left:3px solid var(--accent);min-height:3rem;margin-top:.8rem}
+.dc-source{font-family:var(--kai);font-size:.76rem;line-height:1.6;color:var(--muted);letter-spacing:.08em;margin:0 0 .5rem}
+.dc-text{font-family:var(--kai);font-size:1.08rem;line-height:1.85;color:var(--ink);letter-spacing:.04em;margin:0;white-space:pre-line;overflow-wrap:anywhere}
+.dc-from{font-family:var(--latin);font-style:italic;font-size:.85rem;line-height:1.7;color:var(--accent);margin:.45rem 0 0;overflow-wrap:anywhere}
+.dc-feedback{display:flex;flex-direction:column;align-items:flex-start;gap:.45rem;margin-top:.65rem}
+.dc-status{font-size:.75rem;line-height:1.75;color:var(--muted);margin:0;overflow-wrap:anywhere}
+[data-state="failure"] .dc-status{color:var(--accent)}
+.dc-foot{display:flex;justify-content:space-between;align-items:center;gap:.7rem;margin-top:.9rem;padding-top:.8rem;border-top:1px dashed var(--rule)}
+.dc-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.55rem}
+.dc-button{font-family:var(--kai);font-size:.82rem;color:var(--accent);letter-spacing:.08em;background:transparent;border:1px solid var(--rule);border-radius:3px;min-width:44px;min-height:44px;padding:.45rem .65rem;cursor:pointer;line-height:1.4}
+.dc-button:hover:not(:disabled){border-color:var(--accent)}
+.dc-button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.dc-button:disabled{cursor:wait;opacity:.6}
+.dc-seal{flex:none;width:30px;height:30px;border:2px solid var(--seal);color:var(--seal);display:flex;align-items:center;justify-content:center;font-family:var(--kai);font-size:1rem;border-radius:4px;transform:rotate(5deg);opacity:.82}
+.dc-export-status{margin-top:.6rem}
 </style>
-<script is:inline src="https://cdn.jsdelivr.net/npm/lunar-javascript@1/lunar.js"></script>
 <script>
-  (function(){
-    var box=document.querySelector('[data-daily]');
-    if(!box)return;
+  type LunarDate = {
+    getMonthInChinese(): string;
+    getDayInChinese(): string;
+    getYearInGanZhi(): string;
+    getMonthInGanZhi(): string;
+    getDayInGanZhi(): string;
+  };
+  type SolarLibrary = { fromDate(date: Date): { getLunar(): LunarDate } };
+  type WidgetState = 'loading' | 'success' | 'failure';
 
-    /* —— 日历部分 —— */
-    var monthCh=['一','二','三','四','五','六','七','八','九','十','十一','十二'];
-    function renderCal(){
-      if(typeof Solar==='undefined'){setTimeout(renderCal,200);return;}
-      try{
-        var weekCh=['日','一','二','三','四','五','六'];
-        var solar=Solar.fromDate(new Date());
-        var lunar=solar.getLunar();
-        box.querySelector('[data-cal-day]').textContent=solar.getDay();
-        box.querySelector('[data-cal-my]').textContent=monthCh[solar.getMonth()-1]+'月 · '+solar.getYear();
-        box.querySelector('[data-cal-week]').textContent='星期'+weekCh[solar.getWeek()];
-        box.querySelector('[data-cal-lunar]').textContent='农历'+lunar.getMonthInChinese()+'月'+lunar.getDayInChinese();
-        box.querySelector('[data-cal-gz]').textContent=lunar.getYearInGanZhi()+'年　'+lunar.getMonthInGanZhi()+'月 '+lunar.getDayInGanZhi()+'日';
-      }catch(e){
-        box.querySelector('[data-cal-day]').textContent='?';
+  const box = document.querySelector<HTMLElement>('[data-daily]');
+  if (box) {
+    const calendar = box.querySelector<HTMLElement>('[data-calendar]');
+    const quote = box.querySelector<HTMLElement>('[data-hitokoto]');
+    if (calendar) initCalendar(calendar);
+    if (quote) initQuote(quote, box.querySelector<HTMLButtonElement>('[data-hk-refresh]'));
+    initExport(box);
+  }
+
+  function timeoutFor(element: HTMLElement) {
+    const value = Number(element.dataset.timeout);
+    // Configurable implementation defaults, not a service availability promise.
+    return Number.isFinite(value) && value > 0 ? Math.min(value, 2147483647) : 6000;
+  }
+
+  function loadSolar(timeoutMs: number): Promise<SolarLibrary> {
+    const getSolar = () => {
+      const solar = (window as Window & { Solar?: SolarLibrary }).Solar;
+      return typeof solar?.fromDate === 'function' ? solar : undefined;
+    };
+    const available = getSolar();
+    if (available) return Promise.resolve(available);
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      let settled = false;
+      const finish = (error?: Error) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timer);
+        script.onload = null;
+        script.onerror = null;
+        script.remove();
+        if (error) return reject(error);
+        const solar = getSolar();
+        if (solar) resolve(solar);
+        else reject(new Error('invalid'));
+      };
+      const timer = window.setTimeout(() => finish(new Error('timeout')), timeoutMs);
+      script.src = 'https://cdn.jsdelivr.net/npm/lunar-javascript@1/lunar.js';
+      script.async = true;
+      script.referrerPolicy = 'no-referrer';
+      script.onload = () => finish();
+      script.onerror = () => finish(new Error('network'));
+      document.head.append(script);
+    });
+  }
+
+  function initCalendar(calendar: HTMLElement) {
+    const day = calendar.querySelector<HTMLTimeElement>('[data-cal-day]')!;
+    const monthYear = calendar.querySelector<HTMLElement>('[data-cal-my]')!;
+    const week = calendar.querySelector<HTMLElement>('[data-cal-week]')!;
+    const lunarText = calendar.querySelector<HTMLElement>('[data-cal-lunar]')!;
+    const ganzhi = calendar.querySelector<HTMLElement>('[data-cal-gz]')!;
+    const auxiliary = calendar.querySelector<HTMLElement>('[data-cal-aux]')!;
+    const status = calendar.querySelector<HTMLElement>('[data-cal-status]')!;
+    const retry = calendar.querySelector<HTMLButtonElement>('[data-cal-retry]')!;
+    const months = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
+    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+    let solar: SolarLibrary | undefined;
+    let currentDay = '';
+    let midnightTimer: number | undefined;
+    let loading = false;
+
+    function setState(state: WidgetState, message: string) {
+      calendar.dataset.state = state;
+      status.textContent = message;
+      auxiliary.setAttribute('aria-busy', String(state === 'loading'));
+      retry.hidden = state !== 'failure';
+      retry.disabled = state === 'loading';
+    }
+
+    function fail(message: string) {
+      solar = undefined;
+      lunarText.textContent = '农历暂不可用';
+      ganzhi.textContent = '';
+      setState('failure', message);
+    }
+
+    function renderLunar(now: Date) {
+      if (!solar) return;
+      try {
+        const lunar = solar.fromDate(now).getLunar();
+        lunarText.textContent = '农历' + lunar.getMonthInChinese() + '月' + lunar.getDayInChinese();
+        ganzhi.textContent = lunar.getYearInGanZhi() + '年　' + lunar.getMonthInGanZhi() + '月 ' + lunar.getDayInGanZhi() + '日';
+        setState('success', '公历为本地日期；农历已更新。');
+      } catch {
+        fail('农历解析失败，公历仍可用。');
       }
     }
-    renderCal();
 
-    /* —— 一言部分 —— */
-    var cats=(box.getAttribute('data-cats')||'').split(',').filter(Boolean);
-    var auto=parseInt(box.getAttribute('data-auto')||'0',10)||0;
-    var click=box.getAttribute('data-click')==='1';
-    var te=box.querySelector('[data-hk-text]');
-    var fe=box.querySelector('[data-hk-from]');
-    var hint=box.querySelector('[data-hk-hint]');
-    var loading=false;
-    function apply(d){
-      te.textContent=d.hitokoto||'';
-      var src='';
-      if(d.from_who)src+=d.from_who;
-      if(d.from){src+=src?('《'+d.from+'》'):d.from;}
-      fe.textContent='—— '+(src||'一言');
+    function renderGregorian(now: Date) {
+      const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      if (key === currentDay) return;
+      currentDay = key;
+      day.dateTime = key;
+      day.textContent = String(now.getDate());
+      monthYear.textContent = months[now.getMonth()] + '月 · ' + now.getFullYear();
+      week.textContent = '星期' + weekdays[now.getDay()];
+      renderLunar(now);
     }
-    function pickCat(){return cats.length?cats[Math.floor(Math.random()*cats.length)]:'';}
-    function fade(cb){te.classList.add('dc-fade');fe.classList.add('dc-fade');setTimeout(function(){cb();te.classList.remove('dc-fade');fe.classList.remove('dc-fade');},250);}
-    async function load(){
-      if(loading)return;
-      loading=true;
-      if(hint)hint.textContent='正在获取…';
-      try{
-        var c=pickCat();
-        var url='https://v1.hitokoto.cn/?encode=json&charset=utf-8'+(c?('&c='+c):'');
-        var ctrl=new AbortController();
-        var to=setTimeout(function(){ctrl.abort();},6000);
-        var r=await fetch(url,{signal:ctrl.signal});
-        clearTimeout(to);
-        if(!r.ok)throw new Error('http '+r.status);
-        var d=await r.json();
-        if(!d||!d.hitokoto)throw new Error('bad data');
-        fade(function(){apply(d);});
-        if(hint)hint.textContent=click?'点击换句':'';
-      }catch(e){
-        if(hint)hint.textContent='连接一言失败';
-      }finally{
-        loading=false;
+
+    function followLocalDay() {
+      window.clearTimeout(midnightTimer);
+      const now = new Date();
+      renderGregorian(now);
+      const nextDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+      midnightTimer = window.setTimeout(followLocalDay, Math.max(1000, nextDay.getTime() - now.getTime() + 50));
+    }
+
+    async function loadLunar() {
+      if (loading) return;
+      loading = true;
+      renderGregorian(new Date());
+      setState('loading', '正在加载农历；公历已在本地就绪。');
+      try {
+        solar = await loadSolar(timeoutFor(calendar));
+        const now = new Date();
+        renderGregorian(now);
+        renderLunar(now);
+      } catch (error) {
+        fail(error instanceof Error && error.message === 'timeout'
+          ? '农历加载超时，公历仍可用。'
+          : '农历加载失败，公历仍可用。');
+      } finally {
+        loading = false;
       }
     }
-    function run(){
-      load();
-      if(auto>0)setInterval(load,auto*1000);
+
+    followLocalDay();
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) followLocalDay();
+    });
+    retry.addEventListener('click', () => void loadLunar());
+    void loadLunar();
+  }
+
+  function parseQuote(value: unknown) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('invalid');
+    const data = value as Record<string, unknown>;
+    if (typeof data.hitokoto !== 'string' || !data.hitokoto.trim() || data.hitokoto.length > 1000) throw new Error('invalid');
+    function source(value: unknown) {
+      if (value === undefined || value === null) return '';
+      if (typeof value !== 'string' || value.length > 200) throw new Error('invalid');
+      return value.trim();
     }
-    if(click){box.addEventListener('click',load);}
-    var ric=window.requestIdleCallback;
-    if(typeof ric==='function'){ric(run,{timeout:2000});}else{setTimeout(run,300);}
+    const from = source(data.from);
+    const author = source(data.from_who);
+    return {
+      text: data.hitokoto.trim(),
+      from: '—— ' + (author && from ? `${author}《${from}》` : author || from || '佚名'),
+    };
+  }
 
-    /* —— 导出图片（Canvas 2D，不修改 DOM 以保持布局精确） —— */
-    var exportBtn=box.querySelector('[data-export]');
-    if(exportBtn){
-      exportBtn.addEventListener('click',function(e){
-        e.stopPropagation();
-        e.preventDefault();
-        doExport();
-      });
+  function initQuote(quote: HTMLElement, refresh: HTMLButtonElement | null) {
+    const text = quote.querySelector<HTMLElement>('[data-hk-text]')!;
+    const from = quote.querySelector<HTMLElement>('[data-hk-from]')!;
+    const source = quote.querySelector<HTMLElement>('[data-hk-source]')!;
+    const content = quote.querySelector<HTMLElement>('[data-hk-content]')!;
+    const status = quote.querySelector<HTMLElement>('[data-hk-status]')!;
+    const retry = quote.querySelector<HTMLButtonElement>('[data-hk-retry]')!;
+    const categories = (quote.dataset.cats || '').split(',').filter(Boolean);
+    const auto = Number(quote.dataset.auto);
+    let loading = false;
+    let localFallback = true;
 
-      function doExport(){
-        exportBtn.textContent='生成中…';
-        exportBtn.style.pointerEvents='none';
-        var fontSteps=[];
-        if(document.fonts){
-          ['5.5rem "Cormorant Garamond"','1rem "Ma Shan Zheng"','1rem "Noto Serif SC"'].forEach(function(f){
-            fontSteps.push(document.fonts.load(f).catch(function(){}));
-          });
+    function setState(state: WidgetState, message: string) {
+      quote.dataset.state = state;
+      status.textContent = message;
+      content.setAttribute('aria-busy', String(state === 'loading'));
+      retry.hidden = state !== 'failure';
+      retry.disabled = state === 'loading';
+      if (refresh) refresh.disabled = state === 'loading';
+    }
+
+    async function loadQuote() {
+      if (loading) return;
+      loading = true;
+      setState('loading', localFallback ? '正在获取一言，暂显示本地兜底句。' : '正在换句，暂保留上一句。');
+      const controller = new AbortController();
+      let timedOut = false;
+      const timer = window.setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, timeoutFor(quote));
+      try {
+        const url = new URL('https://v1.hitokoto.cn/');
+        url.searchParams.set('encode', 'json');
+        url.searchParams.set('charset', 'utf-8');
+        if (categories.length) url.searchParams.set('c', categories[Math.floor(Math.random() * categories.length)]);
+        const response = await fetch(url, { signal: controller.signal, credentials: 'omit', referrerPolicy: 'no-referrer' });
+        if (!response.ok) throw new Error('network');
+        const data = parseQuote(await response.json());
+        if (controller.signal.aborted) throw new Error('timeout');
+        text.textContent = data.text;
+        from.textContent = data.from;
+        source.textContent = '一言 · 在线获取';
+        localFallback = false;
+        setState('success', '一言已更新。');
+      } catch (error) {
+        const reason = timedOut ? '一言请求超时' : error instanceof Error && (error.message === 'invalid' || error instanceof SyntaxError)
+          ? '一言返回内容无效' : '一言暂不可用';
+        if (!localFallback) source.textContent = '一言 · 上次获取';
+        setState('failure', reason + (localFallback ? '；当前为本地兜底句。' : '；已保留上次在线句。'));
+      } finally {
+        window.clearTimeout(timer);
+        loading = false;
+      }
+    }
+
+    retry.addEventListener('click', () => void loadQuote());
+    refresh?.addEventListener('click', () => void loadQuote());
+    void loadQuote();
+    if (Number.isFinite(auto) && auto > 0) {
+      window.setInterval(() => {
+        if (!document.hidden) void loadQuote();
+      }, Math.min(auto * 1000, 2147483647));
+    }
+  }
+
+  function initExport(card: HTMLElement) {
+    const button = card.querySelector<HTMLButtonElement>('[data-export]')!;
+    const status = card.querySelector<HTMLElement>('[data-export-status]')!;
+    button.disabled = false;
+    button.addEventListener('click', () => {
+      button.disabled = true;
+      try {
+        // Snapshot the visible text and computed theme without waiting for network fonts.
+        const canvas = drawCardToCanvas(card);
+        const now = new Date();
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = `daily-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}.png`;
+        link.hidden = true;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        status.textContent = 'PNG 已生成；若未开始下载，请检查浏览器下载设置。';
+      } catch {
+        status.textContent = '存图失败，请重试；页面内容未改变。';
+      } finally {
+        status.hidden = false;
+        button.disabled = false;
+      }
+    });
+  }
+
+  function drawCardToCanvas(card: HTMLElement) {
+    const bounds = card.getBoundingClientRect();
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(bounds.width * 2);
+    canvas.height = Math.ceil(bounds.height * 2);
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('canvas unavailable');
+    const ctx = context;
+    ctx.scale(2, 2);
+    const style = getComputedStyle(card);
+    const radius = parseFloat(style.borderRadius) || 0;
+    const border = parseFloat(style.borderTopWidth) || 1;
+    ctx.fillStyle = style.backgroundColor;
+    roundedRect(ctx, 0, 0, bounds.width, bounds.height, radius);
+    ctx.fill();
+    ctx.strokeStyle = style.borderTopColor;
+    ctx.lineWidth = border;
+    roundedRect(ctx, border / 2, border / 2, bounds.width - border, bounds.height - border, radius);
+    ctx.stroke();
+
+    for (const element of card.querySelectorAll<HTMLElement>('[data-export-line]')) {
+      const rect = element.getBoundingClientRect();
+      ctx.fillStyle = getComputedStyle(element).backgroundColor;
+      ctx.fillRect(rect.left - bounds.left, rect.top - bounds.top, rect.width, rect.height);
+    }
+    for (const element of card.querySelectorAll<HTMLElement>('.dc-quote, .dc-foot')) {
+      const rect = element.getBoundingClientRect();
+      const styles = getComputedStyle(element);
+      const x = rect.left - bounds.left;
+      const y = rect.top - bounds.top;
+      const top = parseFloat(styles.borderTopWidth);
+      const left = parseFloat(styles.borderLeftWidth);
+      if (top) {
+        ctx.strokeStyle = styles.borderTopColor;
+        ctx.lineWidth = top;
+        ctx.setLineDash(styles.borderTopStyle === 'dashed' ? [3, 3] : []);
+        ctx.beginPath();
+        ctx.moveTo(x, y + top / 2);
+        ctx.lineTo(x + rect.width, y + top / 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      if (left) {
+        ctx.fillStyle = styles.borderLeftColor;
+        ctx.fillRect(x, y, left, rect.height);
+      }
+    }
+
+    // DOM ranges retain the browser's wrapping, including fallback labels and status text.
+    for (const element of card.querySelectorAll<HTMLElement>('[data-export-text]')) {
+      if (!element.getClientRects().length) continue;
+      const styles = getComputedStyle(element);
+      ctx.font = `${styles.fontStyle} ${styles.fontWeight} ${styles.fontSize} ${styles.fontFamily}`;
+      ctx.fillStyle = styles.color;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      const size = parseFloat(styles.fontSize);
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      const range = document.createRange();
+      let node: Node | null;
+      while ((node = walker.nextNode())) {
+        let offset = 0;
+        for (const character of node.textContent || '') {
+          range.setStart(node, offset);
+          offset += character.length;
+          range.setEnd(node, offset);
+          const rect = range.getBoundingClientRect();
+          if (!rect.width || !rect.height || character === '\n') continue;
+          const metrics = ctx.measureText(character);
+          const ascent = metrics.fontBoundingBoxAscent ?? size * .8;
+          const descent = metrics.fontBoundingBoxDescent ?? size * .2;
+          const baseline = rect.top - bounds.top + (rect.height - ascent - descent) / 2 + ascent;
+          ctx.fillText(character, rect.left - bounds.left, baseline);
         }
-        Promise.all(fontSteps)
-          .then(function(){return document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();})
-          .then(function(){return new Promise(function(r){setTimeout(r,100);});})
-          .then(function(){
-            var canvas=drawCardToCanvas();
-            if(!canvas)throw new Error('draw failed');
-            var now=new Date();
-            var fn='daily-'+now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+'.png';
-            var a=document.createElement('a');
-            a.href=canvas.toDataURL('image/png');
-            a.download=fn;
-            a.click();
-          })
-          .catch(function(e){console.error(e);exportBtn.textContent='失败';})
-          .finally(function(){
-            exportBtn.textContent='存图';
-            exportBtn.style.pointerEvents='';
-          });
-      }
-
-      function drawCardToCanvas(){
-        var boxRect=box.getBoundingClientRect();
-        var W=boxRect.width,H=boxRect.height,dpr=2;
-        var canvas=document.createElement('canvas');
-        canvas.width=Math.round(W*dpr);
-        canvas.height=Math.round(H*dpr);
-        var ctx=canvas.getContext('2d');
-        ctx.scale(dpr,dpr);
-
-        var root=getComputedStyle(document.documentElement);
-        function cv(n,f){return root.getPropertyValue(n).trim()||f;}
-        var C={paper:cv('--paper','#FBF7EC'),ink:cv('--ink','#2A2520'),accent:cv('--accent','#A23A2E'),muted:cv('--muted','#6B5D4F'),faint:cv('--faint','#9C8D7B'),rule:cv('--rule','#D9CFBE'),seal:cv('--seal','#A23A2E')};
-
-        /* 背景 + 边框（用 rule 色，不用 hover 态的 accent 色） */
-        var bs=getComputedStyle(box);
-        var radius=parseFloat(bs.borderRadius)||8,bw=parseFloat(bs.borderTopWidth)||1;
-        ctx.fillStyle=C.paper;rr(ctx,0,0,W,H,radius);ctx.fill();
-        ctx.strokeStyle=C.rule;ctx.lineWidth=bw;rr(ctx,bw/2,bw/2,W-bw,H-bw,Math.max(0,radius-bw/2));ctx.stroke();
-
-        /* 获取元素相对卡片的位置 */
-        function rp(el){var r=el.getBoundingClientRect();return{x:r.left-boxRect.left,y:r.top-boxRect.top,w:r.width,h:r.height};}
-
-        /* 构建 canvas 可用的 font 字符串（用 px 而非 rem） */
-        function fontStr(el){
-          var s=getComputedStyle(el);
-          var str='';
-          if(s.fontStyle&&s.fontStyle!=='normal')str+=s.fontStyle+' ';
-          if(s.fontWeight&&s.fontWeight!=='400'&&s.fontWeight!=='normal')str+=s.fontWeight+' ';
-          str+=s.fontSize+' '+s.fontFamily;
-          return str;
-        }
-
-        /* 绘制带字间距的文字 */
-        function dt(el,color,align,base,ls){
-          var s=getComputedStyle(el),p=rp(el);
-          ctx.font=fontStr(el);ctx.fillStyle=color;ctx.textAlign=align||'left';ctx.textBaseline=base||'top';
-          var text=el.textContent;
-          /* 修正 line-height 导致的垂直偏移 */
-          var fs=parseFloat(s.fontSize),lh=parseFloat(s.lineHeight)||fs*1.85;
-          var offsetY=base==='middle'?0:(lh-fs)/2;
-          if(ls){
-            var sp=fs*ls,chars=text.split(''),tw=0;
-            chars.forEach(function(c){tw+=ctx.measureText(c).width+sp;});tw-=sp;
-            var sx=align==='center'?p.x+(p.w-tw)/2:align==='right'?p.x+p.w-tw:p.x,cx=sx;
-            chars.forEach(function(c){ctx.fillText(c,cx,p.y+offsetY);cx+=ctx.measureText(c).width+sp;});
-          }else{
-            var tx=align==='center'?p.x+p.w/2:align==='right'?p.x+p.w:p.x;
-            ctx.fillText(text,tx,p.y+offsetY);
-          }
-        }
-
-        /* 标签 + 线 */
-        dt(box.querySelector('.dc-label'),C.accent,'left','top',0.3);
-        var lp=rp(box.querySelector('.dc-line'));
-        ctx.strokeStyle=C.rule;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(lp.x,lp.y+lp.h/2);ctx.lineTo(lp.x+lp.w,lp.y+lp.h/2);ctx.stroke();
-        /* 月份年份 */
-        dt(box.querySelector('.dc-my'),C.muted,'center','top',0.15);
-        /* 日期数字（day-wrap 内居中） */
-        var dayEl=box.querySelector('.dc-day'),dwp=rp(box.querySelector('.dc-day-wrap'));
-        ctx.font=fontStr(dayEl);ctx.fillStyle=C.ink;ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.fillText(dayEl.textContent,dwp.x+dwp.w/2,dwp.y+dwp.h/2);
-        /* 星期 */
-        dt(box.querySelector('.dc-week'),C.accent,'center','top',0.2);
-        /* 分隔线 */
-        var rlp=rp(box.querySelector('.dc-rule'));
-        ctx.strokeStyle=C.rule;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(rlp.x,rlp.y+rlp.h/2);ctx.lineTo(rlp.x+rlp.w,rlp.y+rlp.h/2);ctx.stroke();
-        /* 农历 + 干支 */
-        dt(box.querySelector('.dc-lunar'),C.ink,'center','top',0.05);
-        dt(box.querySelector('.dc-gz'),C.faint,'center','top',0.08);
-        /* 一言区域 */
-        var qEl=box.querySelector('.dc-quote'),qp=rp(qEl),qs=getComputedStyle(qEl);
-        ctx.strokeStyle=C.rule;ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(qp.x,qp.y);ctx.lineTo(qp.x+qp.w,qp.y);ctx.stroke();ctx.setLineDash([]);
-        ctx.strokeStyle=C.accent;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(qp.x,qp.y);ctx.lineTo(qp.x,qp.y+qp.h);ctx.stroke();
-        var tEl=box.querySelector('.dc-text'),tes=getComputedStyle(tEl),tp=rp(tEl);
-        var tlh=parseFloat(tes.lineHeight)||parseFloat(tes.fontSize)*1.85;
-        ctx.font=fontStr(tEl);ctx.fillStyle=C.ink;ctx.textAlign='left';ctx.textBaseline='top';
-        var qText=tEl.textContent,qW=qp.w-parseFloat(qs.paddingLeft)-parseFloat(qs.paddingRight);
-        var lines=[],cur='';
-        for(var i=0;i<qText.length;i++){var test=cur+qText[i];if(ctx.measureText(test).width>qW&&cur){lines.push(cur);cur=qText[i];}else cur=test;}
-        if(cur)lines.push(cur);
-        var ty=tp.y;lines.forEach(function(line){ctx.fillText(line,tp.x,ty);ty+=tlh;});
-        var fEl=box.querySelector('.dc-from'),fp=rp(fEl);
-        ctx.font=fontStr(fEl);ctx.fillStyle=C.accent;ctx.fillText(fEl.textContent,fp.x,fp.y);
-        /* 底部虚线 */
-        var ftp=rp(box.querySelector('.dc-foot'));
-        ctx.strokeStyle=C.rule;ctx.lineWidth=1;ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(ftp.x,ftp.y);ctx.lineTo(ftp.x+ftp.w,ftp.y);ctx.stroke();ctx.setLineDash([]);
-        /* 印章 — 不隐藏任何元素，位置精确 */
-        var sEl=box.querySelector('.dc-seal'),sp=rp(sEl),ss=getComputedStyle(sEl),ssz=sp.w;
-        ctx.save();ctx.translate(sp.x+ssz/2,sp.y+ssz/2);ctx.rotate(5*Math.PI/180);ctx.globalAlpha=0.82;
-        ctx.strokeStyle=C.seal;ctx.lineWidth=2;ctx.strokeRect(-ssz/2+1,-ssz/2+1,ssz-2,ssz-2);
-        ctx.fillStyle=C.seal;ctx.font=fontStr(sEl);ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(sEl.textContent,0,0);ctx.restore();
-        return canvas;
-      }
-      function rr(ctx,x,y,w,h,r){
-        r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);
-        ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();
       }
     }
-  })();
+
+    const seal = card.querySelector<HTMLElement>('.dc-seal');
+    if (seal) {
+      const rect = seal.getBoundingClientRect();
+      const styles = getComputedStyle(seal);
+      const width = seal.offsetWidth;
+      const height = seal.offsetHeight;
+      ctx.save();
+      ctx.translate(rect.left - bounds.left + rect.width / 2, rect.top - bounds.top + rect.height / 2);
+      ctx.rotate(5 * Math.PI / 180);
+      ctx.globalAlpha = Number(styles.opacity);
+      ctx.strokeStyle = styles.borderTopColor;
+      ctx.lineWidth = parseFloat(styles.borderTopWidth);
+      roundedRect(ctx, -width / 2 + 1, -height / 2 + 1, width - 2, height - 2, parseFloat(styles.borderRadius));
+      ctx.stroke();
+      ctx.fillStyle = styles.color;
+      ctx.font = `${styles.fontStyle} ${styles.fontWeight} ${styles.fontSize} ${styles.fontFamily}`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(seal.textContent || '', 0, 0);
+      ctx.restore();
+    }
+    return canvas;
+  }
+
+  function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + width, y, x + width, y + height, r);
+    ctx.arcTo(x + width, y + height, x, y + height, r);
+    ctx.arcTo(x, y + height, x, y, r);
+    ctx.arcTo(x, y, x + width, y, r);
+    ctx.closePath();
+  }
 </script>

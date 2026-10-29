@@ -1,13 +1,31 @@
 ---
-const { item, section } = Astro.props;
-const day = item.data.date.slice(8);
-const month = item.data.date.slice(5, 7) + '月';
+import type { CollectionEntry } from 'astro:content';
+import { entryURL, tagURL, sectionLabels } from '../content-utils';
+
+interface Props {
+  item: CollectionEntry<'notes'> | CollectionEntry<'essays'>;
+  section?: string;
+  showSection?: boolean;
+}
+const { item, showSection = false } = Astro.props;
+const { title, date, excerpt, tags, demo, featured } = item.data;
+const source = item.collection === 'notes' ? item.data.src : undefined;
 ---
-<a href={`/${section}/${item.slug}/`} class="card">
-  <div class="card-date"><span class="d">{day}</span><span class="m">{month}</span></div>
+<article class="card">
+  <time class="card-date" datetime={date} aria-label={`发布日期 ${date}`}>
+    <span class="d">{date.slice(8)}</span>
+    <span class="m">{date.slice(0, 4)} · {date.slice(5, 7)}月</span>
+  </time>
   <div class="card-body">
-    <div class="card-title">{item.data.title}{item.data.src && <span class="src">· {item.data.src}</span>}</div>
-    <div class="card-excerpt">{item.data.excerpt}</div>
-    <div class="tags">{item.data.tags.map(t => <span class="tag">{t}</span>)}</div>
+    <div class="card-labels">
+      {demo && <span class="demo-badge">演示内容</span>}
+      {showSection && <span class="section-label">{sectionLabels[item.collection]}</span>}
+      {featured && <span class="featured-label">作者精选</span>}
+    </div>
+    <a href={entryURL(item)} class="card-primary" data-detail-link>
+      <h3 class="card-title">{title}{source && <span class="src">· {source}</span>}</h3>
+      <p class="card-excerpt">{excerpt}</p>
+    </a>
+    {tags.length > 0 && <div class="tags" aria-label="内容标签">{tags.map(tag => <a class="tag" href={tagURL(tag)}>{tag}</a>)}</div>}
   </div>
-</a>
+</article>

@@ -1,0 +1,175 @@
+---
+import ArticleCard from './ArticleCard.astro';
+import WorkCard from './WorkCard.astro';
+import { sectionLabels, tagURL, type Entry, type Section } from '../content-utils';
+
+interface Props { entries: Entry[]; mode: Section | 'tags' }
+const { entries, mode } = Astro.props;
+const isTags = mode === 'tags';
+const tags = [...new Set(entries.flatMap(entry => entry.data.tags))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+const filters = [{ key: 'all', label: '全部' }, ...Object.entries(sectionLabels).map(([key, label]) => ({ key, label }))];
+const pages = Math.ceil(entries.length / 10);
+---
+<section data-paginated-list data-list-page data-mode={mode} data-deferred-results data-state="loading">
+  {isTags && (
+    <>
+      <nav class="tag-index" aria-label="选择标签">
+        {tags.map(tag => <a class="tag" href={tagURL(tag)} data-tag-choice={tag}>{tag}</a>)}
+        {tags.length === 0 && <p class="empty-state">尚未添加标签。</p>}
+      </nav>
+      <nav class="list-filters" aria-label="按栏目筛选标签结果">
+        {filters.map(filter => <a href={`/tags/?section=${filter.key}&page=1`} data-section-filter={filter.key}>{filter.label}</a>)}
+      </nav>
+    </>
+  )}
+  <div class="list-summary" data-list-top tabindex="-1">
+    <p data-list-status role="status" aria-live="polite">{isTags ? '选择一个标签，继续翻阅相关内容。' : `共 ${entries.length} 条内容，每页最多 10 条。`}</p>
+    <p class="list-feedback" data-list-feedback hidden></p>
+  </div>
+  <div class:list={['list-items', mode === 'works' ? 'work-grid' : 'cards', { 'tag-results': isTags }]}>
+    {entries.map((entry, index) => (
+      <div data-list-item data-section={entry.collection} data-tags={JSON.stringify(entry.data.tags)} hidden={isTags || index >= 10}>
+        {entry.collection === 'works' ? <WorkCard work={entry} showSection={isTags} /> : <ArticleCard item={entry} showSection={isTags} />}
+      </div>
+    ))}
+  </div>
+  <div class="empty-state" data-list-empty hidden={isTags || entries.length > 0}>
+    <p data-empty-message>暂无内容。</p>
+    <p class="empty-links"><a href="/notes/">浏览札记</a><a href="/essays/">浏览随笔</a><a href="/works/">浏览作品</a></p>
+  </div>
+  <nav class="pagination" data-pagination aria-label="内容分页" hidden={isTags || entries.length === 0}>
+    <a data-page-prev aria-disabled="true" tabindex="-1">上一页</a>
+    <span data-page-label>第 1 / {pages || 1} 页</span>
+    <a data-page-next href={pages > 1 ? '?page=2' : undefined} aria-disabled={pages <= 1 ? 'true' : undefined} tabindex={pages <= 1 ? -1 : undefined}>下一页</a>
+  </nav>
+  <noscript><p class="list-feedback">分页与标签筛选需要 JavaScript。栏目列表当前展示前 10 条内容；所有内容仍有独立地址。</p></noscript>
+</section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const list = document.querySelector<HTMLElement>('[data-paginated-list]');
+    if (!list) return;
+    const root = list;
+    const isTags = root.dataset.mode === 'tags';
+    const items = Array.from(root.querySelectorAll<HTMLElement>('[data-list-item]')).map(node => ({
+      node, section: node.dataset.section!, tags: JSON.parse(node.dataset.tags!) as string[],
+    }));
+    const status = root.querySelector<HTMLElement>('[data-list-status]')!;
+    const feedback = root.querySelector<HTMLElement>('[data-list-feedback]')!;
+    const empty = root.querySelector<HTMLElement>('[data-list-empty]')!;
+    const emptyMessage = root.querySelector<HTMLElement>('[data-empty-message]')!;
+    const pagination = root.querySelector<HTMLElement>('[data-pagination]')!;
+    const previous = root.querySelector<HTMLAnchorElement>('[data-page-prev]')!;
+    const next = root.querySelector<HTMLAnchorElement>('[data-page-next]')!;
+    const label = root.querySelector<HTMLElement>('[data-page-label]')!;
+    const top = root.querySelector<HTMLElement>('[data-list-top]')!;
+    const names: Record<string, string> = { all: '全部', notes: '札记', essays: '随笔', works: '作品' };
+
+    function render(moveToList = false) {
+      const url = new URL(location.href);
+      const tag = (url.searchParams.get('tag') || '').trim();
+      const requestedSection = url.searchParams.get('section') || 'all';
+      const section = Object.hasOwn(names, requestedSection) ? requestedSection : 'all';
+      const tagged = isTags ? items.filter(item => tag && item.tags.includes(tag)) : items;
+      const matching = isTags && section !== 'all' ? tagged.filter(item => item.section === section) : tagged;
+      const totalPages = Math.ceil(matching.length / 10);
+      const rawPage = url.searchParams.get('page');
+      const valid = rawPage === null || (/^[1-9]\d*$/.test(rawPage) && Number.isSafeInteger(Number(rawPage)));
+      const requestedPage = valid ? Number(rawPage || 1) : 1;
+      const page = Math.min(requestedPage, Math.max(1, totalPages));
+      const messages: string[] = [];
+      if (!valid) messages.push('页码无效，已回到第一页。');
+      else if (requestedPage > page) messages.push(matching.length ? `内容页数已变化，已显示末页（第 ${page} 页）。` : '当前没有匹配内容，已重置页码。');
+      if (isTags && requestedSection !== section) messages.push('栏目筛选无效，已显示全部栏目。');
+      url.searchParams.set('page', String(page));
+      if (isTags) {
+        if (tag) url.searchParams.set('tag', tag);
+        else url.searchParams.delete('tag');
+        url.searchParams.set('section', section);
+        const heading = document.querySelector<HTMLElement>('[data-tag-heading]');
+        if (heading) heading.textContent = tag ? `标签 · ${tag}` : '标签索引';
+        root.querySelectorAll<HTMLAnchorElement>('[data-section-filter]').forEach(link => {
+          const target = new URL(url);
+          target.searchParams.set('section', link.dataset.sectionFilter!);
+          target.searchParams.set('page', '1');
+          link.href = target.href;
+          if (link.dataset.sectionFilter === section) link.setAttribute('aria-current', 'true');
+          else link.removeAttribute('aria-current');
+        });
+        root.querySelectorAll<HTMLAnchorElement>('[data-tag-choice]').forEach(link => {
+          if (link.dataset.tagChoice === tag) link.setAttribute('aria-current', 'true');
+          else link.removeAttribute('aria-current');
+        });
+      }
+      if (url.href !== location.href) history.replaceState(history.state, '', url);
+      items.forEach(item => { item.node.hidden = true; });
+      matching.slice((page - 1) * 10, page * 10).forEach(item => { item.node.hidden = false; });
+      status.textContent = isTags
+        ? (tag ? `标签“${tag}” · ${names[section]} · 共 ${matching.length} 条内容，每页最多 10 条。` : '选择一个标签，继续翻阅相关内容。')
+        : `${names[root.dataset.mode!]} · 共 ${matching.length} 条内容，每页最多 10 条。`;
+      feedback.textContent = messages.join(' ');
+      feedback.hidden = messages.length === 0;
+      empty.hidden = matching.length > 0 || (isTags && !tag);
+      emptyMessage.textContent = isTags
+        ? (tagged.length > 0 ? '该栏目下暂无此标签内容。可切换其他栏目继续浏览。' : `暂无带有“${tag}”标签的内容。`)
+        : '暂无内容，稍后再来翻阅。';
+      pagination.hidden = totalPages === 0;
+      label.textContent = `第 ${page} / ${totalPages || 1} 页`;
+      [[previous, page - 1], [next, page + 1]].forEach(([link, number]) => {
+        const anchor = link as HTMLAnchorElement;
+        const targetPage = number as number;
+        const disabled = targetPage < 1 || targetPage > totalPages;
+        if (disabled) {
+          anchor.removeAttribute('href');
+          anchor.setAttribute('aria-disabled', 'true');
+          anchor.tabIndex = -1;
+        } else {
+          const target = new URL(url);
+          target.searchParams.set('page', String(targetPage));
+          anchor.href = target.href;
+          anchor.removeAttribute('aria-disabled');
+          anchor.removeAttribute('tabindex');
+        }
+      });
+      if (moveToList) {
+        top.focus({ preventScroll: true });
+        top.scrollIntoView({ block: 'start', behavior: 'instant' });
+      }
+      root.dataset.state = 'ready';
+      window.dispatchEvent(new Event('qd:content-ready'));
+    }
+
+    root.addEventListener('click', event => {
+      const link = (event.target as Element).closest<HTMLAnchorElement>('[data-page-prev], [data-page-next], [data-section-filter], [data-tag-choice]');
+      if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      if (!link.hasAttribute('href')) { event.preventDefault(); return; }
+      event.preventDefault();
+      window.dispatchEvent(new Event('qd:before-change'));
+      if (link.href !== location.href) history.pushState({}, '', link.href);
+      render(true);
+    });
+    window.addEventListener('popstate', () => render());
+    render();
+  }, { once: true });
+</script>
+
+<style>
+  .list-summary { margin-top: 1.5rem; color: var(--muted); font-size: .88rem; scroll-margin-top: 5.5rem; }
+  .list-feedback { margin-top: .6rem; padding: .7rem 1rem; border-left: 2px solid var(--accent); color: var(--muted); background: var(--paper); font-size: .86rem; }
+  .list-items { margin-top: .6rem; }
+  .pagination { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 1rem; margin-top: 2rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); font-size: .88rem; }
+  .pagination a { display: inline-flex; min-height: 44px; align-items: center; padding: .4rem .9rem; border: 1px solid var(--rule2); border-radius: var(--r); }
+  .pagination a[aria-disabled] { color: var(--muted); opacity: .6; cursor: default; }
+  .tag-index { display: flex; flex-wrap: wrap; gap: .55rem; padding: 1.5rem 0; }
+  .tag-index a { min-height: 36px; display: inline-flex; align-items: center; }
+  .list-filters { display: flex; flex-wrap: wrap; gap: .5rem; border-bottom: 1px solid var(--rule); padding-bottom: 1rem; }
+  .list-filters a { min-height: 44px; padding: .5rem 1rem; border: 1px solid var(--rule2); border-radius: var(--r); color: var(--muted); }
+  .list-filters a[aria-current], .tag-index a[aria-current] { border-color: var(--accent); color: var(--accent); background: var(--paper); font-weight: 700; }
+  .tag-results :global(.work) { margin: 1rem 0; display: grid; grid-template-columns: 8rem minmax(0, 1fr); }
+  .tag-results :global(.work-thumb) { height: 100%; min-height: 8rem; }
+  @media (max-width: 520px) {
+    .tag-results :global(.work) { grid-template-columns: 1fr; }
+    .tag-results :global(.work-thumb) { height: 5rem; min-height: 0; }
+    .pagination { gap: .65rem; }
+  }
+</style>
